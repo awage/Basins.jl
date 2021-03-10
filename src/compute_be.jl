@@ -10,7 +10,6 @@ pn=zeros(1,S)
 Sb=0
 Nb=0
 N=0
-
 for x = 1:eps_x:(r-eps_x+1)
     for y = 1:eps_y:(c-eps_y+1)
         x_coor=x:x+eps_x-1

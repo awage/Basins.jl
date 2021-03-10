@@ -29,5 +29,19 @@ yg = range(-2.,2.,length=yres)
 # Basin entropy
 @show Sb,Sbb = basin_entropy(basin, 20, 20)
 
+
+# Basin entropy
+@show Sb,Sbb = basin_entropy(basin, 20, 20)
+
+
+# before computing wada merge we remove the attractors from the basin:
+ind = findall(iseven.(basin) .== true)
+[ basin[k]=bsn.basin[k]+1 for k in ind ]
+
+@time max_dist,min_dist = wada_merge.compute_merge_dist(basin,xg,yg)
+epsilon = xg[2]-xg[1]
+@show v_dist = max_dist/epsilon
+
+
 # Uncertainty dimension for these parameter and grid
 @time D, ε, f_ε = uncertainty_dimension(xg, yg, integ_df; T=2*pi/ω, max_res=4, num_step=5)
