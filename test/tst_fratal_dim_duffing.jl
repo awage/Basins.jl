@@ -24,4 +24,4 @@ xg = range(-2.2,2.2,length=xres)
 yg = range(-2.,2.,length=yres)
 
 # Wada Grid Method
-@time D, ε, f_ε = uncertainty_dimension(xg, yg, integ_df; T=2*pi/ω, max_res=4, max_step=5)
+@time D, ε, f_ε = uncertainty_dimension(xg, yg, integ_df; T=2*pi/ω, max_res=4, num_step=5)

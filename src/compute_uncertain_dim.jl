@@ -41,10 +41,14 @@ function uncertainty_dimension(xg, yg, integ_df; T, num_step=10, max_res=4)
         push!(ε,x_n[2]-x_n[1])
     end
 
+    # uncertain function
+    f_ε = N_u./N
+
+    # get exponent
     @. model(x, p) = p[1]*x+p[2]
     fit = curve_fit(model, vec(log.(ε)), vec(log.(f_ε)), [2., 2.])
     D = coef(fit)
 
-    return D[1], ε, N_u./N
+    return D[1], ε, f_ε
 
 end
