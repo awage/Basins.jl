@@ -3,7 +3,6 @@ using LinearAlgebra
 using StaticArrays
 
 
-
 mutable struct basin_info
     basin :: Array{Int16,2}
     xg :: Array{Float64,1}
