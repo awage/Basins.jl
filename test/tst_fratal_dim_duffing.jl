@@ -1,13 +1,6 @@
 using Revise
 using DifferentialEquations
-#using Plots
 
-
-include("compute_ba.jl")
-import .ba_routine
-
-include("compute_box_dim.jl")
-import .compute_box_dim
 
 # Equations of motion:
 function duffing!(du, u, p, t)
@@ -15,8 +8,6 @@ function duffing!(du, u, p, t)
     du[1] = u[2]
     du[2] = -d*u[2] + u[1] - u[1]^3 + F*sin(omega*t)
 end
-
-
 
 F = 0.201010
 ω = 0.50202
@@ -33,7 +24,4 @@ xg = range(-2.2,2.2,length=xres)
 yg = range(-2.,2.,length=yres)
 
 # Wada Grid Method
-@time ε, f_ε = uncertainty_dimension(xg, yg, integ_df; T=2*pi/ω, max_res=4, max_step=5)
-
-D = coef(fit)
-return D[1],ε, f_ε
+@time D, ε, f_ε = uncertainty_dimension(xg, yg, integ_df; T=2*pi/ω, max_res=4, max_step=5)
