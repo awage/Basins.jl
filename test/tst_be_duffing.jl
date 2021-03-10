@@ -1,7 +1,7 @@
 using Revise
 using Plots
 using DifferentialEquations
-
+using Basins
 
 # Equations of motion:
 function duffing!(du, u, p, t)
@@ -23,8 +23,8 @@ yres=200
 xg = range(-2.2,2.2,length=xres)
 yg = range(-2.,2.,length=yres)
 
-@time bsn = draw_basin(xg, yg, integ_df; T=2*pi/ω)
+@time basin = draw_basin(xg, yg, integ_df; T=2*pi/ω)
 
-@show Sb,Sbb = basin_entropy(bsn.basin, 20, 20)
+@show Sb,Sbb = basin_entropy(basin, 20, 20)
 
-plot(xg,yg,bsn.basin', seriestype=:heatmap)
+plot(xg,yg,basin', seriestype=:heatmap)

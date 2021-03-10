@@ -27,12 +27,12 @@ df = ODEProblem(duffing!,rand(2),(0.0,1000.0), p)
 
 integ_df  = init(df, alg=Tsit5(); reltol=1e-8, save_everystep=false)
 
-xres=100
-yres=100
+xres=200
+yres=200
 
 xg = range(-2.2,2.2,length=xres)
 yg = range(-2.2,2.2,length=yres)
 
-@time bsn = Basins.draw_basin(xg, yg, integ_df; T=2*pi/ω)
+@time basin = draw_basin(xg, yg, integ_df; T=2*pi/ω)
 
-plot(xg,yg,bsn.basin', seriestype=:heatmap)
+plot(xg,yg,basin', seriestype=:heatmap)

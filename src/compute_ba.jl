@@ -1,6 +1,4 @@
-using DifferentialEquations
-using LinearAlgebra
-using StaticArrays
+
 
 
 mutable struct basin_info
@@ -192,17 +190,9 @@ end
 
 
 
-function draw_basin(xg, yg, integ_df; T=0.)
+function draw_basin(xg, yg, integ_df; T=0.01)
 
     complete = 0;
-    # define the step size of the integration
-    stepper!() = nothing
-    if T == 0.
-        stepper!() =  step!(integ_df)
-    else
-        # if T is set we have a stroboscopic map.
-        stepper!() =  step!(integ_df, T, true)
-    end
 
     bsn_nfo = basin_info(ones(Int8, length(xg), length(yg)), xg, yg, 2,4,0,0,0,1,1,0,0)
 
@@ -233,7 +223,7 @@ function draw_basin(xg, yg, integ_df; T=0.)
 
          while next_box == 0
             old_u = integ_df.u
-            stepper!()
+            step!(integ_df, T, true) # perform a step
             new_u = integ_df.u
             n,m = get_box(new_u, bsn_nfo)
             if n>=0 # apply procedure only for boxes in the defined space
@@ -251,7 +241,7 @@ function draw_basin(xg, yg, integ_df; T=0.)
 
          end
     end
-    return bsn_nfo
+    return bsn_nfo.basin
 end
 
 
