@@ -38,7 +38,7 @@ function uncertainty_dimension(xg, yg, integ_df; T, num_step=10, max_res=4)
         end
         push!(N_u,Nu)
         push!(N,Nb)
-        push!(ε,x_n[2]-x_n[1])
+        push!(ε,(x_n[2]-x_n[1])*1.5)
     end
 
     # uncertain function

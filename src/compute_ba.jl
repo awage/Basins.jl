@@ -14,6 +14,7 @@ mutable struct basin_info
     prev_bas :: Int32
     prev_step :: Int32
     step :: Int32
+    
 end
 
 # Helper function to optimize allocations
