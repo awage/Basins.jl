@@ -241,6 +241,11 @@ function draw_basin(xg, yg, integ_df; T=0.01)
 
          end
     end
+
+    ind = findall(iseven.(bsn_nfo.basin) .== true)
+    [ bsn_nfo.basin[k]=bsn_nfo.basin[k]+1 for k in ind ]
+    bsn_nfo.basin = (bsn_nfo.basin .- 1).//2
+
     return bsn_nfo.basin
 end
 

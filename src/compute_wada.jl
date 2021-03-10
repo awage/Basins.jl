@@ -46,7 +46,8 @@ function wada_merge_dist(basin,y1,y2)
     v_list=get_list(basin, y1, y2)
 
     # compute distances using combbinations of 2 elements from a collection
-    ind = combinations(unique(basin),2)
+    ind = combinations(1:num_att,2)
+
     min_dist = Inf;
     max_dist = 0
     for (k, patron) in enumerate(ind)
@@ -96,7 +97,7 @@ function init_ode_info(xg, yg, integ_df, basin, T)
 
     # define the step size of the integration
 
-    return ode_info(ba_routine.basin_info(basin, xg, yg,2,4,0,0,0,1,1,0,0),
+    return ode_info(basin_info(basin, xg, yg,2,4,0,0,0,1,1,0,0),
                     integ_df,
                     T,
                     [],
@@ -105,13 +106,13 @@ function init_ode_info(xg, yg, integ_df, basin, T)
 end
 
 function reset_point_data!(ode_nfo, p1, p2, clrs)
-    ba_routine.reset_bsn_nfo!(ode_nfo.bsn_nfo)
+    reset_bsn_nfo!(ode_nfo.bsn_nfo)
     ode_nfo.clr_set = Set(clrs)#Array{Int16,1}[]
     ode_nfo.pnt_set = Set([p1,p2])
 end
 
 
-function compute_wada_W(xg, yg, integ_df, basin, T, iter_max)
+function compute_wada_W(xg, yg, integ_df, basin; T=0, max_iter=10)
 
    ode_nfo = init_ode_info(xg, yg, integ_df, basin, T)
    num_att = length(unique(basin))
@@ -124,7 +125,7 @@ function compute_wada_W(xg, yg, integ_df, basin, T, iter_max)
    # initialize empty array of indices and collection of empty sets of colors
    clr_mat = [Set{Int16}() for i=1:length(p1_ind)]
    p2_ind = typeof(p1_ind)(undef, length(p1_ind))
-   W = zeros(num_att, iter_max)
+   W = zeros(num_att, max_iter)
 
    # Initialize matrices (step 1)
    for (k,p1) in enumerate(p1_ind)
@@ -141,7 +142,7 @@ function compute_wada_W(xg, yg, integ_df, basin, T, iter_max)
    end
 
    # Do the iteration!
-   for n = 2:iter_max
+   for n = 2:max_iter
        for k in 1:length(p1_ind)
            pc1 = index_to_coord(p1_ind[k])
            pc2 = index_to_coord(p2_ind[k])
@@ -204,7 +205,7 @@ function divide_and_test_W(ode_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = ba_routine.get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt[1],pnt[2], ode_nfo.T)
+        clr = get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt[1],pnt[2], ode_nfo.T)
         push!(clrs, clr)
         if length(clrs)  == Na
             break

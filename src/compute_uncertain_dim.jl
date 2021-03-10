@@ -18,13 +18,12 @@ function uncertainty_dimension(xg, yg, integ_df; T, num_step=10, max_res=4)
 
         @time basin = draw_basin(x_n, y_n, integ_df; T)
 
-        # before computing we remove the attractors from the basin (even numbers):
-        ind = findall(iseven.(basin) .== true)
-        [ basin[k[1],k[2]]=basin[k[1],k[2]]+1 for k in ind ]
-
         r,c= size(basin)
         vals = unique(basin)
         S=Int16(length(vals))
+        if S < 2
+            return 1,0,0
+        end
         Nb=0; Nu=0;
         eps_x=3;
         eps_y=3;
