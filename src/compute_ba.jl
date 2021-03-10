@@ -82,7 +82,7 @@ function procedure!(bsn_nfo::basin_info, n,m)
     elseif next_c == 1 && bsn_nfo.consecutive_match >= max_check
         # Maybe chaotic attractor, perodic or long recursion.
         bsn_nfo.basin[n,m] = bsn_nfo.current_color
-        println("1 y > max_check")
+        #println("1 y > max_check")
         return 0
     elseif next_c == bsn_nfo.current_color + 1
         # hit a previously visited box with the current color, possible attractor?
@@ -90,7 +90,7 @@ function procedure!(bsn_nfo::basin_info, n,m)
             bsn_nfo.consecutive_match += 1
             return 0
         else
-            println("got attractor")
+            #println("got attractor")
             #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             #[ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
             find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
@@ -129,7 +129,7 @@ function procedure!(bsn_nfo::basin_info, n,m)
         find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         bsn_nfo.current_color = bsn_nfo.next_avail_color
         bsn_nfo.next_avail_color += 2
-        println("even and > max check ", next_c)
+        #println("even and > max check ", next_c)
         reset_bsn_nfo!(bsn_nfo)
         return 1;
     else
