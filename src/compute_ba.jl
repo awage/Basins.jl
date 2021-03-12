@@ -1,6 +1,5 @@
 
 
-
 mutable struct basin_info
     basin :: Array{Int16,2}
     xg :: Array{Float64,1}
@@ -24,7 +23,6 @@ function find_and_replace!(basin, old_c, new_c)
         end
     end
 end
-
 
 
 function get_box(u, bsn_nfo::basin_info)
@@ -191,6 +189,20 @@ end
 
 
 function draw_basin(xg, yg, integ_df; T=0.01)
+    iter_f! = (integ_df) -> step!(integ_df, T, true)
+
+    if integ_df isa DynamicalSystemsBase.MinimalDiscreteIntegrator
+        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0)
+    else
+        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0, t0=0, erase_sol=true,reinit_callbacks=true)
+    end
+
+    draw_basin(xg, yg, integ_df, iter_f!, reinit_f!; T=0.01)
+    
+end
+
+function draw_basin(xg, yg, integ_df, iter_f!, reinit_f!; T=0.01)
+
 
     complete = 0;
 
@@ -216,14 +228,13 @@ function draw_basin(xg, yg, integ_df; T=0.01)
 
          # reinitialize integrator
          u0 = [x0, y0]
-         reinit!(integ_df, u0, t0=0, erase_sol=true,reinit_callbacks=true)
-
+         reinit_f!(integ_df)
          next_box = 0
          inlimbo = 0
 
          while next_box == 0
             old_u = integ_df.u
-            step!(integ_df, T, true) # perform a step
+            step_f!(integ_df) # perform a step
             new_u = integ_df.u
             n,m = get_box(new_u, bsn_nfo)
             if n>=0 # apply procedure only for boxes in the defined space

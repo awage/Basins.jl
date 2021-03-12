@@ -1,22 +1,23 @@
 using Revise
-using DifferentialEquations
 using Basins
 using Printf
-# Equations of motion:
-function duffing!(du, u, p, t)
+using Plots
+using DynamicalSystems
+using DifferentialEquations
+
+@inline @inbounds function duffing(u, p, t)
     d = p[1]; F = p[2]; omega = p[3]
-    du[1] = u[2]
-    du[2] = -d*u[2] + u[1] - u[1]^3 + F*sin(omega*t)
+    du1 = u[2]
+    du2 = -d*u[2] + u[1] - u[1]^3 + F*sin(omega*t)
+    return SVector{2}(du1, du2)
 end
 
-F = 0.4
-ω = 2.
-#d, F ,w
+F=0.2
+ω = 0.5848
+p= [0.15, F, ω]
+ds = ContinuousDynamicalSystem(duffing, rand(2), p)
+integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 
-p=[0.15, F, ω]
-#p=[0.15, 0.2, 0.1]
-df = ODEProblem(duffing!,rand(2),(0.0,1000.0), p)
-integ_df  = init(df, alg=Tsit5(); reltol=1e-8, save_everystep=false)
 
 xres=200
 yres=200

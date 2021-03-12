@@ -1,6 +1,7 @@
 module Basins
 
-using DifferentialEquations
+#using DifferentialEquations
+using DynamicalSystems
 using LinearAlgebra
 using LsqFit
 using ImageFiltering
