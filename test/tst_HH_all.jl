@@ -1,3 +1,4 @@
+
 using Plots
 using Basins
 using DifferentialEquations
@@ -94,7 +95,7 @@ println("---------------")
 
 
 
-
+using DynamicalSystems
 using Roots
 
 
@@ -137,17 +138,41 @@ end
 
 
 hh = Systems.henonheiles()
+integ = integrator(hh, u0=[0,0,0,0])
 plane = (1, 0)
-u0 = [0.0, -0.25, 0.42081, 0.0]
-integ = integrator(hh, u0=u0)
 direction = -1
 planecrossing = PlaneCrossing(plane, direction > 0)
 rootkw = (xrtol = 1e-6, atol = 1e-6)
-reinit!(integ, [0.0, -0.25, 0.42081, 0.0])
 idxs=[2,4]
-#poincarmap(integ, planecrossing, 0, SVector{length(idxs), Int}(idxs...), rootkw)
-f_iter = (integ) -> poincaremap(integ, planecrossing, 0,  SVector{length(idxs), Int}(idxs...), rootkw)
 
-u = Dataset([ f_iter(integ) for k in 1:2000])
+iter_f! = (integ) -> poincaremap(integ, planecrossing, 0,  SVector{length(idxs), Int}(idxs...), rootkw)
 
-plot(u[:, 1], u[:, 2], seriestype=:scatter)
+#u = Dataset([ iter_f!(integ) for k in 1:2000])
+#plot(u[:, 1], u[:, 2], seriestype=:scatter)
+
+
+function reinit_f!(integ, u)
+	Ei = 0.25
+	x0 = 0; y0=u[1]; py=u[2];
+	Esqrt = 2. *Ei-y0^2+2/3*y0^3-py^2;
+
+	if Esqrt < 0
+		#return
+		Esqrt = -Esqrt
+	end
+	px=sqrt(Esqrt);
+	vi = [px,x0,py,y0];
+	reinit!(integ, vi, t0=0)
+end
+
+rpy=range(-0.75,0.75,length=100)
+ry0=range(-0.65,1.1,length=100)
+
+@time basin=draw_basin(rpy, ry0, integ, iter_f!, reinit_f!)
+
+tspan=(0.0,400)
+# Define callback to halt solver
+condition(u,t,integrator) = (u[1]^2+u[3]^2)>100
+affect!(integrator) = terminate!(integrator)
+cb = DiscreteCallback(condition,affect!)
+prob = ODEProblem(henon_heiles_de,vi,tspan,callback=cb)

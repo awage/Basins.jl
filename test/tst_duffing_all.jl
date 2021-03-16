@@ -25,7 +25,10 @@ xg = range(-2.2,2.2,length=xres)
 yg = range(-2.,2.,length=yres)
 
 # compute basin
-@time basin = draw_basin(xg, yg, integ_df; T=2*pi/ω)
+iter_f! = (x) -> step!(x, 2*pi/ω, true)
+reinit_f! = (x, y) -> reinit!(x, y, t0=0, erase_sol=true,reinit_callbacks=true)
+@time basin=draw_basin(xg, yg, integ_df, iter_f!, reinit_f!)
+
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(basin, 20, 20)

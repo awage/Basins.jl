@@ -88,7 +88,7 @@ function procedure!(bsn_nfo::basin_info, n,m)
             bsn_nfo.consecutive_match += 1
             return 0
         else
-            #println("got attractor")
+            # println("got attractor")
             #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             #[ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
             find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
@@ -187,21 +187,7 @@ function reset_bsn_nfo!(bsn_nfo::basin_info)
 end
 
 
-
-function draw_basin(xg, yg, integ_df; T=0.01)
-    iter_f! = (integ_df) -> step!(integ_df, T, true)
-
-    if integ_df isa DynamicalSystemsBase.MinimalDiscreteIntegrator
-        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0)
-    else
-        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0, t0=0, erase_sol=true,reinit_callbacks=true)
-    end
-
-    draw_basin(xg, yg, integ_df, iter_f!, reinit_f!; T=0.01)
-    
-end
-
-function draw_basin(xg, yg, integ_df, iter_f!, reinit_f!; T=0.01)
+function draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
 
 
     complete = 0;
@@ -228,13 +214,13 @@ function draw_basin(xg, yg, integ_df, iter_f!, reinit_f!; T=0.01)
 
          # reinitialize integrator
          u0 = [x0, y0]
-         reinit_f!(integ_df)
+         reinit_f!(integ_df,u0)
          next_box = 0
          inlimbo = 0
 
          while next_box == 0
             old_u = integ_df.u
-            step_f!(integ_df) # perform a step
+            iter_f!(integ_df) # perform a step
             new_u = integ_df.u
             n,m = get_box(new_u, bsn_nfo)
             if n>=0 # apply procedure only for boxes in the defined space
@@ -258,6 +244,21 @@ function draw_basin(xg, yg, integ_df, iter_f!, reinit_f!; T=0.01)
     bsn_nfo.basin = (bsn_nfo.basin .- 1).//2
 
     return bsn_nfo.basin
+end
+
+
+
+function draw_basin(xg, yg, integ_df; T=0.01)
+    iter_f! = (integ_df) -> step!(integ_df, T, true)
+
+    if integ_df isa DynamicalSystemsBase.MinimalDiscreteIntegrator
+        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0)
+    else
+        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0, t0=0, erase_sol=true,reinit_callbacks=true)
+    end
+
+    return draw_basin(xg, yg, integ_df, iter_f!, reinit_f!)
+
 end
 
 
