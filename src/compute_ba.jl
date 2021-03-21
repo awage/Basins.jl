@@ -63,9 +63,9 @@ function procedure!(bsn_nfo::basin_info, n,m)
         if bsn_nfo.prevConsecutives >= 2
         # Wait if we hit the attractor a second time just to check if it is not a nearby trajectory
             c3 = next_c+1
-            #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-            #[ bsn_nfo.basin[k[1],k[2]] = c3  for k in ind]
-            find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, c3)
+            ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+            [ bsn_nfo.basin[k[1],k[2]] = c3  for k in ind]
+            #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, c3)
 
             reset_bsn_nfo!(bsn_nfo)
             return 1
@@ -89,9 +89,9 @@ function procedure!(bsn_nfo::basin_info, n,m)
             return 0
         else
             # println("got attractor")
-            #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-            #[ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
-            find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
+            ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+            [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
+            #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
 
             bsn_nfo.basin[n,m] = bsn_nfo.current_color
             # We continue iterating until we hit again the same attractor. In which case we stop.
@@ -111,9 +111,9 @@ function procedure!(bsn_nfo::basin_info, n,m)
         end
 
         if bsn_nfo.consecutive_other_basins > 60 || bsn_nfo.prevConsecutives > 10
-            #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-            #[bsn_nfo.basin[k[1],k[2]] = next_c for k in ind]
-            find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, next_c)
+            ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+            [bsn_nfo.basin[k[1],k[2]] = next_c for k in ind]
+            #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, next_c)
 
             reset_bsn_nfo!(bsn_nfo)
             return 1
@@ -122,9 +122,9 @@ function procedure!(bsn_nfo::basin_info, n,m)
 
     elseif iseven(next_c) && bsn_nfo.consecutive_match >= max_check
         # We have checked the presence of an attractor: tidy up everything and get a new box.
-        #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-        #[ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
-        find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
+        ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+        [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
+        # find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         bsn_nfo.current_color = bsn_nfo.next_avail_color
         bsn_nfo.next_avail_color += 2
         #println("even and > max check ", next_c)
@@ -140,17 +140,17 @@ function check_outside_the_screen!(bsn_nfo::basin_info, new_u, old_u, ni, mi, in
 
     if norm(new_u-old_u) < 1e-5
         #println("Got stuck somewhere, Maybe an attractor outside the screen: ", new_u)
-        #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-        #[ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
-        find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
+        ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+        [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
+        #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         reset_bsn_nfo!(bsn_nfo)
         bsn_nfo.basin[ni,mi]=-1 # this CI goes to a attractor outside the screen, set to -1 (even color)
         return -1  # get next box
     elseif inlimbo > 60*20
         #println("trajectory diverges: ", new_u)
-        #ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-        #[ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
-        find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
+        ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+        [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
+        #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         reset_bsn_nfo!(bsn_nfo)
         bsn_nfo.basin[ni,mi]=-1 # this CI is problematic or diverges, set to -1 (even color)
         return -1  # get next box
@@ -186,6 +186,18 @@ function reset_bsn_nfo!(bsn_nfo::basin_info)
     bsn_nfo.step = 0
 end
 
+"""
+    draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
+Compute an estimate of the basin of attraction on a two-dimensional plane.
+
+## Arguments
+* xg, yg : 1-dim range vector that defines the grid of the initial conditions to test.
+* integ_df : integrator handle for a system defined on a plane.
+* iter_f! : function that iterates the map or the system, see step! from DifferentialEquations.jl and
+examples for a Poincaré map of a continuous system.
+* reinit_f! : function that sets the initial condition to test.
+
+"""
 
 function draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
 

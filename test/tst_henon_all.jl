@@ -2,6 +2,7 @@ using Revise
 using DifferentialEquations
 using DynamicalSystems
 using Basins
+using Plots
 using Printf
 
 

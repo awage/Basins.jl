@@ -6,7 +6,7 @@ using Basins
 
 
 # http://dx.doi.org/10.1155/2013/256092
-# Multiple Coexisting Attractors and Hysteresis inthe Generalized Ueda Oscillator
+# Multiple Coexisting Attractors and Hysteresis in the Generalized Ueda Oscillator
 @inline @inbounds function ueda(u, p, t)
     b = p[1]; F = p[2]; ω = p[3]; α = p[4]
 	x=u[1]; y=u[2]; z=u[3];

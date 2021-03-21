@@ -22,11 +22,11 @@ function newton_map_J(J,z0, p, n)
    return
 end
 
-ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [4] , newton_map_J)
+ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [10] , newton_map_J)
 integ  = integrator(ds)
 
-xg=range(-1.5,1.5,length=300)
-yg=range(-1.5,1.5,length=300)
+xg=range(-1.5,1.5,length=400)
+yg=range(-1.5,1.5,length=400)
 
 # compute basin
 iter_f! = (x) -> step!(x)
