@@ -20,7 +20,7 @@ The package provides the following metrics:
 ## Computing the basins of attraction
 
 
-First define a dynamical system on the plane, for example with a stroboscopic map or Poincaré section. For example we can set up an dynamical system with periodic forcing:
+First define a dynamical system on the plane, for example with a stroboscopic map or Poincaré section. For example we can set up an dynamical system with a stroboscopic map defined:
 
 ```jl
 using DynamicalSystems
