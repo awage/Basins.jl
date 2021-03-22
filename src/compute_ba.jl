@@ -15,15 +15,6 @@ mutable struct basin_info
     step :: Int32
 end
 
-# Helper function to optimize allocations
-function find_and_replace!(basin, old_c, new_c)
-    for (k,c) in enumerate(basin)
-        if c == old_c
-            basin[k] = new_c
-        end
-    end
-end
-
 
 function get_box(u, bsn_nfo::basin_info)
     xg = bsn_nfo.xg; yg = bsn_nfo.yg; # aliases
@@ -65,8 +56,6 @@ function procedure!(bsn_nfo::basin_info, n,m)
             c3 = next_c+1
             ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             [ bsn_nfo.basin[k[1],k[2]] = c3  for k in ind]
-            #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, c3)
-
             reset_bsn_nfo!(bsn_nfo)
             return 1
          end
@@ -91,8 +80,6 @@ function procedure!(bsn_nfo::basin_info, n,m)
             # println("got attractor")
             ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
-            #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
-
             bsn_nfo.basin[n,m] = bsn_nfo.current_color
             # We continue iterating until we hit again the same attractor. In which case we stop.
             return 0;
@@ -113,8 +100,6 @@ function procedure!(bsn_nfo::basin_info, n,m)
         if bsn_nfo.consecutive_other_basins > 60 || bsn_nfo.prevConsecutives > 10
             ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             [bsn_nfo.basin[k[1],k[2]] = next_c for k in ind]
-            #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, next_c)
-
             reset_bsn_nfo!(bsn_nfo)
             return 1
         end
@@ -124,7 +109,6 @@ function procedure!(bsn_nfo::basin_info, n,m)
         # We have checked the presence of an attractor: tidy up everything and get a new box.
         ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
         [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
-        # find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         bsn_nfo.current_color = bsn_nfo.next_avail_color
         bsn_nfo.next_avail_color += 2
         #println("even and > max check ", next_c)
@@ -142,7 +126,6 @@ function check_outside_the_screen!(bsn_nfo::basin_info, new_u, old_u, ni, mi, in
         #println("Got stuck somewhere, Maybe an attractor outside the screen: ", new_u)
         ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
         [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
-        #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         reset_bsn_nfo!(bsn_nfo)
         bsn_nfo.basin[ni,mi]=-1 # this CI goes to a attractor outside the screen, set to -1 (even color)
         return -1  # get next box
@@ -150,7 +133,6 @@ function check_outside_the_screen!(bsn_nfo::basin_info, new_u, old_u, ni, mi, in
         #println("trajectory diverges: ", new_u)
         ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
         [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
-        #find_and_replace!(bsn_nfo.basin, bsn_nfo.current_color+1, 1)
         reset_bsn_nfo!(bsn_nfo)
         bsn_nfo.basin[ni,mi]=-1 # this CI is problematic or diverges, set to -1 (even color)
         return -1  # get next box
@@ -187,19 +169,20 @@ function reset_bsn_nfo!(bsn_nfo::basin_info)
 end
 
 """
-    draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
-Compute an estimate of the basin of attraction on a two-dimensional plane.
+    draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
+Compute an estimate of the basin of attraction on a two-dimensional plane. Low level function,
+for higher level functions see: basin_poincare_map, basin_discrete_map, basin_stroboscopic_map
 
 ## Arguments
 * xg, yg : 1-dim range vector that defines the grid of the initial conditions to test.
-* integ_df : integrator handle for a system defined on a plane.
+* integ : integrator handle for a system defined on a plane.
 * iter_f! : function that iterates the map or the system, see step! from DifferentialEquations.jl and
 examples for a Poincaré map of a continuous system.
 * reinit_f! : function that sets the initial condition to test.
 
 """
 
-function draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
+function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 
 
     complete = 0;
@@ -221,19 +204,20 @@ function draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
          x0 = xg[ni]
          y0 = yg[mi]
 
-         # Tentatively assign a color
+         # Tentatively assign a color: odd is for basins, even for attractors.
+         # First color is one
          bsn_nfo.basin[ni,mi] = bsn_nfo.current_color + 1
 
          # reinitialize integrator
          u0 = [x0, y0]
-         reinit_f!(integ_df,u0)
+         reinit_f!(integ,u0)
          next_box = 0
          inlimbo = 0
 
          while next_box == 0
-            old_u = integ_df.u
-            iter_f!(integ_df) # perform a step
-            new_u = integ_df.u
+            old_u = integ.u
+            iter_f!(integ) # perform a step
+            new_u = integ.u
             n,m = get_box(new_u, bsn_nfo)
             if n>=0 # apply procedure only for boxes in the defined space
                 next_box = procedure!(bsn_nfo, n, m)
@@ -259,19 +243,59 @@ function draw_basin(xg, yg, integ_df, iter_f!::Function, reinit_f!::Function)
 end
 
 
+function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.0,
+    direction = -1, idxs = 1:2, rootkw = (xrtol = 1e-6, atol = 1e-6))
 
-function draw_basin(xg, yg, integ_df; T=0.01)
-    iter_f! = (integ_df) -> step!(integ_df, T, true)
-
-    if integ_df isa DynamicalSystemsBase.MinimalDiscreteIntegrator
-        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0)
-    else
-        reinit_f! = (integ_df, u0) -> reinit!(integ_df, u0, t0=0, erase_sol=true,reinit_callbacks=true)
+    if length(idxs) > 2
+        @error "Can only compute basins in two dimensions"
     end
 
-    return draw_basin(xg, yg, integ_df, iter_f!, reinit_f!)
+    i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
+    planecrossing = PlaneCrossing(plane, direction > 0)
 
+    # set the iterator function
+    iter_f! = (integ) -> poincaremap!(integ, planecrossing, Tmax, i, rootkw)
+
+    # Carefully set the initial conditions on the defined plane and
+    tmp_f =
+    reinit_f! = (integ,y) -> _initf(integ, y, idxs, plane)
+
+    basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+    return basin
 end
+
+function _initf(integ, y, idxs, plane)
+    j = plane[1]; v = plane[2]; # take care of the plane
+    u = zeros(1,length(integ.u))
+    u[idxs] = y
+    u[j] = v
+    # all other coordinates are zero
+    reinit!(integ, u)
+end
+
+function basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2)
+
+    iter_f! = (integ) -> step!(integ, T, true)
+    reinit_f! =  (integ,y) -> _tmpf2(integ, y, idxs)
+
+    return draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+end
+
+function _tmpf2(integ, y, idxs)
+    u = zeros(length(integ.u))
+    u[idxs] = y
+    # all other coordinates are zero
+    reinit!(integ, u)
+end
+
+function basin_discrete_map(xg, yg, integ; idxs=1:2)
+
+    iter_f! = (integ) -> step!(integ)
+    reinit_f! =  (integ,y) -> _tmpf2(integ, y, idxs)
+
+    return draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+end
+
 
 
 # identify an attractor

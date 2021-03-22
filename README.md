@@ -25,6 +25,7 @@ First define a dynamical system on the plane, for example with a stroboscopic ma
 ```jl
 using DynamicalSystems
 using Basins
+ω=0.5
 ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 ```
@@ -32,19 +33,15 @@ integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 Now we define the grid of ICs that we want to analyze and launch the procedure:
 
 ```jl
-iter_f! = (x) -> step!(x, 2*pi/ω, true)
-reinit_f! = (integ,y) -> reinit!(integ,[y...,0.,0.], t0=0)
-
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
-
-basin=draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 ```
-There are two important functions defined here:
 
-* iter_f! : defines a function that iterates the system one step on the map.
-* reinit_f! : sets the initial conditions on the map. Remember that only the
-initial conditions on the map must be set.
+The keyword arguments are:
+* `T` : the period of the stroboscopic map.
+* `idxs` : the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
+
 
 Another example with a Poincaré map:
 ```jl
@@ -66,14 +63,23 @@ ds = ContinuousDynamicalSystem(lorenz84, rand(3), p)
 integ  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 ```
 
-Once the integrator has been set the Poincaré map can defined on a plane, we must define a function handler that iterates the system just one time:
+Once the integrator has been set, the Poincaré map can defined on a plane:
 
 ```jl
-iter_f!, integ = poincaremap(ds, (3, 0.), 20., direction=+1, idxs=[1,2])
-reinit_f! = (integ,y) -> reinit!(integ,[y...,0.], t0=0)
-
 xg=range(-1.,1.,length=200)
 yg=range(-1.5,1.5,length=200)
-
-@time basin=draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
 ```
+
+The keyword arguments are:
+* `plane` : A `Tuple{Int, <: Number}`, like `(j, r)` : the plane is defined
+  as when the `j` variable of the system equals the value `r`. It can also be
+  a vector of length `D+1`. The first `D` elements of the
+  vector correspond to ``\\mathbf{a}`` while the last element is ``b``.
+* `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
+
+
+
+* iter_f! : defines a function that iterates the system one step on the map.
+* reinit_f! : sets the initial conditions on the map. Remember that only the
+initial conditions on the map must be set.

@@ -25,12 +25,8 @@ end
 ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [10] , newton_map_J)
 integ  = integrator(ds)
 
-xg=range(-1.5,1.5,length=400)
-yg=range(-1.5,1.5,length=400)
+xg=range(-1.5,1.5,length=200)
+yg=range(-1.5,1.5,length=200)
 
-# compute basin
-iter_f! = (x) -> step!(x)
-reinit_f! = (x, y) -> reinit!(x, y)
-
-@time basin=draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+@time basin=basin_discrete_map(xg, yg, integ)
 plot(xg,yg,basin',seriestype=:heatmap)
