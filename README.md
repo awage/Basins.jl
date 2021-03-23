@@ -140,8 +140,15 @@ basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 eps_x = 20; eps_y = 20;  
 Sb,Sbb = basin_entropy(basin, eps_x, eps_y)
 ```
-The arguments are:
+The arguments of `basin_entropy` are:
 * `basin` : The basin computed on a grid.
 * `eps_x`, `eps_y` : size of the window that samples the basin to compute the entropy.
 
-## 
+
+## Compute the uncertainty exponent of a basin of attraction 
+
+The [uncertainty exponent](https://en.wikipedia.org/wiki/Uncertainty_exponent) and is conected to the [box-counting dimension](https://en.wikipedia.org/wiki/Box-counting_dimension). For a given resolution of the original basin, a sampling of the basin is done until the the fraction of uncertain boxes converges. The process is repeated for different box sizes and then the exponent is estimated.
+
+
+### Usage
+
