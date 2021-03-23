@@ -171,17 +171,16 @@ end
 """
     draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 Compute an estimate of the basin of attraction on a two-dimensional plane. Low level function,
-for higher level functions see: basin_poincare_map, basin_discrete_map, basin_stroboscopic_map
+for higher level functions see: `basin_poincare_map`, `basin_discrete_map`, `basin_stroboscopic_map`
 
 ## Arguments
-* xg, yg : 1-dim range vector that defines the grid of the initial conditions to test.
-* integ : integrator handle for a system defined on a plane.
-* iter_f! : function that iterates the map or the system, see step! from DifferentialEquations.jl and
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `integ` : integrator handle for a system defined on a plane.
+* `iter_f!` : function that iterates the map or the system, see step! from DifferentialEquations.jl and
 examples for a Poincaré map of a continuous system.
-* reinit_f! : function that sets the initial condition to test.
+* `reinit_f!` : function that sets the initial condition to test.
 
 """
-
 function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 
 
@@ -243,6 +242,28 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 end
 
 
+
+"""
+    basin_poincare_map(xg, yg, integ; kwargs...)
+Compute an estimate of the basin of attraction on a two-dimensional plane using a Poincaré map. `
+
+## Arguments
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `integ` : integrator handle for a system defined on a plane.
+
+## Keyword Arguments
+* `plane` A `Tuple{Int, <: Number}`, like `(j, r)` : the plane is defined
+  as when the `j` variable of the system equals the value `r`. It can also be
+  a vector of length `D+1`. The first `D` elements of the
+  vector correspond to ``\\mathbf{a}`` while the last element is ``b``. See ChaosTools.jl
+* `Tmax` : maximum time to search for an intersection with the plane before giving up.
+* `direction = -1` : Only crossings with `sign(direction)` are considered to belong to
+  the surface of section. Positive direction means going from less than ``b``
+  to greater than ``b``.
+* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to the entire state.
+* `rootkw = (xrtol = 1e-6, atol = 1e-6)` : A `NamedTuple` of keyword arguments
+  passed to `find_zero` from [Roots.jl](https://github.com/JuliaMath/Roots.jl).
+"""
 function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.0,
     direction = -1, idxs = 1:2, rootkw = (xrtol = 1e-6, atol = 1e-6))
 
@@ -257,7 +278,6 @@ function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.0,
     iter_f! = (integ) -> poincaremap!(integ, planecrossing, Tmax, i, rootkw)
 
     # Carefully set the initial conditions on the defined plane and
-    tmp_f =
     reinit_f! = (integ,y) -> _initf(integ, y, idxs, plane)
 
     basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
@@ -273,6 +293,18 @@ function _initf(integ, y, idxs, plane)
     reinit!(integ, u)
 end
 
+"""
+    basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2)
+Compute an estimate of the basin of attraction on a two-dimensional plane using a stroboscopic map.
+
+## Arguments
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `integ` : integrator handle for a system defined on a plane.
+
+## Keyword Arguments
+* `T` : Period of the stroboscopic map
+* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to the entire state.
+"""
 function basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2)
 
     iter_f! = (integ) -> step!(integ, T, true)
@@ -288,6 +320,17 @@ function _tmpf2(integ, y, idxs)
     reinit!(integ, u)
 end
 
+"""
+    basin_discrete_map(xg, yg, integ; idxs=1:2)
+Compute an estimate of the basin of attraction on a two-dimensional plane using a discrete map.
+
+## Arguments
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `integ` : integrator handle for a system defined on a plane.
+
+## Keyword Arguments
+* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to the entire state.
+"""
 function basin_discrete_map(xg, yg, integ; idxs=1:2)
 
     iter_f! = (integ) -> step!(integ)

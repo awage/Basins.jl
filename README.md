@@ -1,8 +1,3 @@
-# Basins
-
-#[![Build Status](https://github.com/awage/Basins.jl/workflows/CI/badge.svg)](https://github.com/awage/Basins.jl/actions)
-
-
 Basins.jl
 =========
 
@@ -19,6 +14,11 @@ The package provides the following metrics:
 
 ## Computing the basins of attraction
 
+The technique used to compute the basin of attraction is described in ref. [1]. It
+consists in tracking the trajectory on the plane and coloring the points of according to
+the attractor it leads to. This technique is very efficient for 2D basins.
+
+### Usage
 
 First define a dynamical system on the plane, for example with a stroboscopic map or Poincaré section. For example we can set up an dynamical system with a stroboscopic map defined:
 
@@ -56,7 +56,6 @@ Another example with a Poincaré map:
     return SVector{3}(dx, dy, dz)
 end
 
-
 F=6.846; G=1.287; a=0.25; b=4.;
 p= [F, G, a,b]
 ds = ContinuousDynamicalSystem(lorenz84, rand(3), p)
@@ -79,7 +78,70 @@ The keyword arguments are:
 * `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
 
 
+### Custom differential equations and low level functions.
 
+Supose we want to define a custom ODE and compute the basin of attraction on a defined
+Poincaré map:
+
+```jl
+using DifferentialEquations
+using DynamicalSystems
+using Basins
+
+
+@inline @inbounds function duffing(u, p, t)
+    d = p[1]; F = p[2]; omega = p[3]
+    du1 = u[2]
+    du2 = -d*u[2] + u[1] - u[1]^3 + F*sin(omega*t)
+    return SVector{2}(du1, du2)
+end
+
+d=0.15; F=0.2; ω = 0.5848
+p= [d, F, ω]
+ds = ContinuousDynamicalSystem(duffing, rand(2), p)
+integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+
+xres=200
+yres=200
+
+xg = range(-2.2,2.2,length=xres)
+yg = range(-2.2,2.2,length=yres)
+
+iter_f! = (integ) -> step!(integ, 2π/ω, true)
+reinit_f! =  (integ,y) ->  reinit!(integ, [y...])
+
+basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+```
+
+The following anonymous functions are important:
 * iter_f! : defines a function that iterates the system one step on the map.
 * reinit_f! : sets the initial conditions on the map. Remember that only the
 initial conditions on the map must be set.
+
+
+## Compute the Basin Entropy
+
+The Basin Entropy is a measure of the impredcitibility of the system when considering the initial conditions, see ref. [2].
+
+### Usage
+
+Once the basin of attraction has been computed, the computing the Basin Entropy is easy:
+
+```jl
+using DynamicalSystems
+using Basins
+ω=0.5
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+xg=range(-4,4,length=200)
+yg=range(-4,4,length=200)
+basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+
+eps_x = 20; eps_y = 20;  
+Sb,Sbb = basin_entropy(basin, eps_x, eps_y)
+```
+The arguments are:
+* `basin` : The basin computed on a grid.
+* `eps_x`, `eps_y` : size of the window that samples the basin to compute the entropy.
+
+## 
