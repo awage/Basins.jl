@@ -3,7 +3,6 @@ module Basins
 #using DifferentialEquations
 using DynamicalSystems
 using LinearAlgebra
-using LsqFit
 using ImageFiltering
 using NearestNeighbors
 using Combinatorics
