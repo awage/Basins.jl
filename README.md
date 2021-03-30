@@ -133,7 +133,7 @@ Once the basin of attraction has been computed, the computing the Basin Entropy 
 using DynamicalSystems
 using Basins
 ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
@@ -158,6 +158,7 @@ The [uncertainty exponent](https://en.wikipedia.org/wiki/Uncertainty_exponent) a
 ```jl
 using DynamicalSystems
 using Basins
+ω=0.5
 ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)
@@ -165,7 +166,7 @@ yg=range(-4,4,length=200)
 basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
 bd = box_counting_dim(xg, yg, basin)
-
+# uncertainty exponent
 ue = 2-bd
 ```
 
@@ -187,6 +188,7 @@ Notice that the algorithm gives an answer for a particular choice of the grid. I
 ```jl
 using DynamicalSystems
 using Basins
+ω=0.5
 ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)

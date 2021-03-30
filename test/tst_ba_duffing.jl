@@ -1,6 +1,6 @@
 using Revise
 using Plots
-using DynamicalSystems
+
 using DifferentialEquations
 using Basins
 
