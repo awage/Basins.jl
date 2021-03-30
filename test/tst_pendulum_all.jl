@@ -43,7 +43,7 @@ xg = range(-pi,pi,length=xres)
 yg = range(-2.,4.,length=yres)
 
 # compute basin
-@time basin = draw_basin(xg, yg, integ_df; T=2*pi/ω)
+@time basin = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(basin, 20, 20)
@@ -58,13 +58,11 @@ epsilon = xg[2]-xg[1]
 W = compute_wada_W(xg, yg, integ_df, basin; T=2*pi/ω, max_iter=8)
 W=W./sum(W[:,1])
 @show W[:,end]
-
+r4
 # Uncertainty exponent for these parameter and grid
-xres=50
-yres=50
-nxg = range(-pi,pi,length=xres)
-nyg = range(-2.,4.,length=yres)
-@time D, ε, f_ε = uncertainty_dimension(nxg, nyg, integ_df; T=2*pi/ω, max_res=5, num_step=6)
+D, ε, f_ε = uncertainty_dimension_sample(xg, yg, basin)
+
+bd = box_counting_dim(xg, yg, basin)
 
 plot(xg,yg,basin', seriestype=:heatmap)
 
@@ -77,6 +75,8 @@ println("---------------")
 @printf("Basin entropy %.2f \n", Sb)
 @printf("Boundary Basin Entropy: %.2f\n", Sbb)
 @printf("Uncertainty exponent: α= %.2f\n", D )
+@printf("Box counting dim: bd= %.2f\n", bd)
+
 @printf("Number of basins: %d\n", length(unique(basin)))
 @printf("Merge Method: Max fattening parameter: %.2f\n", dmax)
 @printf("Wada Grid Method: W_Na = %.2f\n ", W[end,end] )

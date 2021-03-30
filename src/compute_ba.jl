@@ -245,7 +245,7 @@ end
 
 """
     basin_poincare_map(xg, yg, integ; kwargs...)
-Compute an estimate of the basin of attraction on a two-dimensional plane using a Poincaré map. `
+Compute an estimate of the basin of attraction on a two-dimensional plane using a Poincaré map.
 
 ## Arguments
 * `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
@@ -257,14 +257,14 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
   a vector of length `D+1`. The first `D` elements of the
   vector correspond to ``\\mathbf{a}`` while the last element is ``b``. See ChaosTools.jl
 * `Tmax` : maximum time to search for an intersection with the plane before giving up.
-* `direction = -1` : Only crossings with `sign(direction)` are considered to belong to
-  the surface of section. Positive direction means going from less than ``b``
-  to greater than ``b``.
-* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to the entire state.
+* `direction = -1` : Only crossings with `sign(direction)` are considered to be long to the surface of section.
+Positive direction means going from less than ``b`` to greater than ``b``.
+* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to
+the entire state.
 * `rootkw = (xrtol = 1e-6, atol = 1e-6)` : A `NamedTuple` of keyword arguments
-  passed to `find_zero` from [Roots.jl](https://github.com/JuliaMath/Roots.jl).
+passed to `find_zero` from [Roots.jl](https://github.com/JuliaMath/Roots.jl).
 """
-function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.0,
+function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.,
     direction = -1, idxs = 1:2, rootkw = (xrtol = 1e-6, atol = 1e-6))
 
     if length(idxs) > 2
@@ -273,16 +273,56 @@ function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.0,
 
     i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
     planecrossing = PlaneCrossing(plane, direction > 0)
+    f = (t) -> planecrossing(integ(t))
 
-    # set the iterator function
-    iter_f! = (integ) -> poincaremap!(integ, planecrossing, Tmax, i, rootkw)
+    # set the iterator function with the low level function for the Poincaré Map
+    iter_f! = (integ) -> poincaremap!(integ, f, planecrossing, Tmax, i, rootkw)
+    #iter_f! = (integ) -> DynamicalSystems.ChaosTools.poincaremap!(integ, f, planecrossing, Tmax, i, rootkw)
 
     # Carefully set the initial conditions on the defined plane and
     reinit_f! = (integ,y) -> _initf(integ, y, idxs, plane)
 
     basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
-    return basin
 end
+
+
+"""
+	poincaremap!(integ, f, planecrossing,  idxs, rootkw, Tmax)
+Low level function that actual performs the algorithm of finding the next crossing
+of the Poincaré surface of section.
+"""
+function poincaremap!(integ, f, planecrossing, Tmax, idxs, rootkw)
+	ti = integ.t
+
+    # Check if initial condition is already on the plane
+    side = planecrossing(integ.u)
+    if side == 0
+		dat = integ.u[idxs]
+        step!(integ)
+		return dat
+    end
+
+    while side < 0
+        (integ.t - ti) > Tmax && break
+        step!(integ)
+        side = planecrossing(integ.u)
+    end
+    while side ≥ 0
+        (integ.t - ti) > Tmax && break
+        step!(integ)
+        side = planecrossing(integ.u)
+    end
+ 	(integ.t -ti) > Tmax && return nothing
+    if (integ.t -ti) > Tmax
+        println("time out")
+    end
+
+    # I am now guaranteed to have `t` in negative and `tprev` in positive
+    tcross = Roots.find_zero(f, (integ.tprev, integ.t), Roots.A42(); rootkw...)
+    ucross = integ(tcross)
+    return ucross[idxs]
+end
+
 
 function _initf(integ, y, idxs, plane)
     j = plane[1]; v = plane[2]; # take care of the plane
@@ -292,6 +332,8 @@ function _initf(integ, y, idxs, plane)
     # all other coordinates are zero
     reinit!(integ, u)
 end
+
+
 
 """
     basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2)
@@ -308,12 +350,12 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
 function basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2)
 
     iter_f! = (integ) -> step!(integ, T, true)
-    reinit_f! =  (integ,y) -> _tmpf2(integ, y, idxs)
+    reinit_f! =  (integ,y) -> _init(integ, y, idxs)
 
     return draw_basin(xg, yg, integ, iter_f!, reinit_f!)
 end
 
-function _tmpf2(integ, y, idxs)
+function _init(integ, y, idxs)
     u = zeros(length(integ.u))
     u[idxs] = y
     # all other coordinates are zero
@@ -334,7 +376,7 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
 function basin_discrete_map(xg, yg, integ; idxs=1:2)
 
     iter_f! = (integ) -> step!(integ)
-    reinit_f! =  (integ,y) -> _tmpf2(integ, y, idxs)
+    reinit_f! =  (integ,y) -> _init(integ, y, idxs)
 
     return draw_basin(xg, yg, integ, iter_f!, reinit_f!)
 end

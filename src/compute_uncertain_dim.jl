@@ -1,5 +1,20 @@
 
-function uncertainty_dimension(xg, yg, integ_df; T, num_step=10, max_res=4)
+function box_counting_dim(xg, yg, basin, size=[])
+
+    bnd = get_boundary_filt(basin)
+    I1 = findall(bnd .== 1);
+    v = hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...)
+    v = Dataset(v')
+
+    #size()
+
+    @show generalized_dim(v; q=0)
+    #@show generalized_dim(v; q=0)
+
+end
+
+
+function uncertainty_dimension_sample(xg, yg, basin)
 
     nx=length(xg)
     ny=length(yg)
@@ -11,35 +26,41 @@ function uncertainty_dimension(xg, yg, integ_df; T, num_step=10, max_res=4)
     N = [] # number of boxes
     ε = [] # resolution
 
-    for (k,r) in enumerate(range(1,max_res,length=num_step))
+    min_ε = 5;
+    max_ε = grid_res_x/20
+    num_step=10
+    r,c= size(basin)
+    vals = unique(basin)
+    S=Int16(length(vals))
+    if S < 2
+        return 1,0,0
+    end
 
-        x_n = range(xi,xf, length=Int(round(grid_res_x*r)))
-        y_n = range(yi,yf, length=Int(round(grid_res_y*r)))
+    r_ε = range(min_ε,max_ε,length=num_step)
 
-        @time basin = draw_basin(x_n, y_n, integ_df; T)
-
-        r,c= size(basin)
-        vals = unique(basin)
-        S=Int16(length(vals))
-        if S < 2
-            return 1,0,0
-        end
+    for (k,s_box) in enumerate(r_ε)
         Nb=0; Nu=0;
-        eps_x=3;
-        eps_y=3;
+        completed = 0;
+        s_box = Int(round(s_box))
         # Find uncertain boxes
-        for x = 1:eps_x:(r-eps_x+1), y = 1:eps_y:(c-eps_y+1)
-                x_coor=x:x+eps_x-1
-                y_coor=y:y+eps_y-1
-                box_values=[basin[k,m] for k in x_coor, m in y_coor]
-                Nb=Nb+1
-                Nu = Nu + (length(unique(box_values))>1)
+        while completed == 0
+            # Random box
+            x = rand(1:(r-s_box+1))
+            y = rand(1:(c-s_box+1))
+            x_coor=x:x+s_box-1
+            y_coor=y:y+s_box-1
+            box_values = [basin[k,m] for k in x_coor, m in y_coor]
+            Nb=Nb+1
+            tmp_Nu = Nu + (length(unique(box_values))>1)
+            if abs((Nu - tmp_Nu)/Nu) < 0.001 && Nu > r*c/s_box^2 && (length(unique(box_values))>1)
+                completed = 1
+            end
+            Nu = tmp_Nu
         end
         push!(N_u,Nu)
         push!(N,Nb)
-        push!(ε,x_n[2]-x_n[1])
+        push!(ε,(xg[2]-xg[1])*s_box)
     end
-
     # uncertain function
     f_ε = N_u./N
 

@@ -17,7 +17,7 @@ xg = range(-2.,2.,length=xres)
 yg = range(-2.,2.,length=yres)
 
 # compute basin
-@time basin = draw_basin(xg, yg, integ_df; T=1)
+@time basin = basin_discrete_map(xg, yg, integ_df)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(basin, 20, 20)
@@ -34,11 +34,7 @@ W=W./sum(W[:,1])
 @show W[:,end]
 
 # Uncertainty exponent for these parameter and grid
-xres=50
-yres=50
-nxg = range(-pi,pi,length=xres)
-nyg = range(-2.,4.,length=yres)
-@time D, ε, f_ε = uncertainty_dimension(nxg, nyg, integ_df; T=1, max_res=5, num_step=6)
+@time D, ε, f_ε = uncertainty_dimension_sample(xg, yg, basin)
 
 plot(xg,yg,basin', seriestype=:heatmap)
 
