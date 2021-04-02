@@ -21,8 +21,7 @@ end
 function newton_map_J(J,z0, p, n)
    return
 end
-
-ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [10] , newton_map_J)
+ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [6] , newton_map_J)
 integ  = integrator(ds)
 
 xg=range(-1.5,1.5,length=200)

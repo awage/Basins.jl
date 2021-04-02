@@ -1,18 +1,18 @@
 
 
-mutable struct basin_info
-    basin :: Array{Int16,2}
-    xg :: Array{Float64,1}
-    yg :: Array{Float64,1}
-    current_color :: Int32
-    next_avail_color :: Int32
-    consecutive_match :: Int32
-    consecutive_other_basins :: Int32
-    prevConsecutives :: Int32
-    prev_attr :: Int32
-    prev_bas :: Int32
-    prev_step :: Int32
-    step :: Int32
+mutable struct basin_info{I,F}
+    basin :: I
+    xg :: F
+    yg :: F
+    current_color :: Int64
+    next_avail_color :: Int64
+    consecutive_match :: Int64
+    consecutive_other_basins :: Int64
+    prevConsecutives :: Int64
+    prev_attr :: Int64
+    prev_bas :: Int64
+    prev_step :: Int64
+    step :: Int64
 end
 
 
@@ -186,7 +186,7 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 
     complete = 0;
 
-    bsn_nfo = basin_info(ones(Int8, length(xg), length(yg)), xg, yg, 2,4,0,0,0,1,1,0,0)
+    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, 2,4,0,0,0,1,1,0,0)
 
     reset_bsn_nfo!(bsn_nfo)
 

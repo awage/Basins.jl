@@ -1,6 +1,5 @@
 using Revise
 using Plots
-
 using DifferentialEquations
 using Basins
 
@@ -19,12 +18,7 @@ F=0.2
 p= [0.15, F, ω]
 ds = ContinuousDynamicalSystem(duffing, rand(2), p)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-
-xres=200
-yres=200
-
-xg = range(-2.2,2.2,length=xres)
-yg = range(-2.2,2.2,length=yres)
-
+xg = range(-2.2,2.2,length=200)
+yg = range(-2.2,2.2,length=200)
 @time basin = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 plot(xg,yg,basin', seriestype=:heatmap)

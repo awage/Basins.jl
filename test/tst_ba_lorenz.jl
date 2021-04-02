@@ -1,11 +1,7 @@
 using Revise
 using Plots
-using Basins
-using DifferentialEquations
-using Printf
 using DynamicalSystems
-using Roots
-using ChaosTools
+using Basins
 
 
 # Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model
@@ -23,10 +19,10 @@ end
 F=6.846; G=1.287; a=0.25; b=4.;
 p= [F, G, a, b]
 ds = ContinuousDynamicalSystem(lorenz84, rand(3), p)
-integ  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+integ  = integrator(ds; reltol=1e-8)
 
 xg=range(-1.,1.,length=100)
 yg=range(-1.5,1.6,length=100)
 
-@time basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
-plot(xg,yg,basin',seriestype=:heatmap)
+@btime basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2);
+#plot(xg,yg,basin',seriestype=:heatmap)

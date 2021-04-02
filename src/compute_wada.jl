@@ -85,12 +85,10 @@ end
 
 
 
-mutable struct ode_info
-    bsn_nfo # basin info for BA routine
-    integ               # integrator
-    T
-    clr_set
-    pnt_set
+mutable struct ode_info{I}
+    bsn_nfo::basin_info # basin info for BA routine
+    integ::I               # integrator
+    T::Float64
 end
 
 function init_ode_info(xg, yg, integ_df, basin, T)
@@ -99,20 +97,15 @@ function init_ode_info(xg, yg, integ_df, basin, T)
 
     return ode_info(basin_info(basin, xg, yg,2,4,0,0,0,1,1,0,0),
                     integ_df,
-                    T,
-                    [],
-                    []
-                    )
+                    T)
 end
 
-function reset_point_data!(ode_nfo, p1, p2, clrs)
+function reset_point_data!(ode_nfo)
     reset_bsn_nfo!(ode_nfo.bsn_nfo)
-    ode_nfo.clr_set = Set(clrs)#Array{Int16,1}[]
-    ode_nfo.pnt_set = Set([p1,p2])
 end
 
 
-function compute_wada_W(xg, yg, integ_df, basin; T=0, max_iter=10)
+function compute_wada_W(xg, yg, integ_df, basin; T=0., max_iter=10)
 
    ode_nfo = init_ode_info(xg, yg, integ_df, basin, T)
    num_att = length(unique(basin))
@@ -132,7 +125,6 @@ function compute_wada_W(xg, yg, integ_df, basin; T=0, max_iter=10)
        p2, nbgs = get_neighbor_and_colors(basin, [p1[1], p1[2]])
        if length(nbgs) > 1
            # keep track of different colors and neighbor point
-           #push!(clr_mat[k], basin[p1],basin[p2])
            push!(clr_mat[k],nbgs...)
            p2_ind[k] = p2
        else

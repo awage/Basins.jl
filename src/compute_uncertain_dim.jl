@@ -6,10 +6,7 @@ function box_counting_dim(xg, yg, basin, size=[])
     v = hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...)
     v = Dataset(v')
 
-    #size()
-
-    @show generalized_dim(v; q=0)
-    #@show generalized_dim(v; q=0)
+    return generalized_dim(v; q=0)
 
 end
 

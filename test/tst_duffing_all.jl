@@ -12,8 +12,8 @@ using DifferentialEquations
     return SVector{2}(du1, du2)
 end
 
-F=0.2
-ω = 0.5848
+ω=0.1617
+F = 0.395
 p= [0.15, F, ω]
 ds = ContinuousDynamicalSystem(duffing, rand(2), p)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
@@ -45,11 +45,11 @@ W=W./sum(W[:,1])
 @show W[:,end]
 
 # Uncertainty exponent for these parameter and grid
-xres=50
-yres=50
-nxg = range(-2.2,2.2,length=xres)
-nyg = range(-2.,2.,length=yres)
-@time D, ε, f_ε = uncertainty_dimension(nxg, nyg, integ_df; T=2*pi/ω, max_res=5, num_step=6)
+# xres=50
+# yres=50
+# nxg = range(-2.2,2.2,length=xres)
+# nyg = range(-2.,2.,length=yres)
+#@time D, ε, f_ε = uncertainty_dimension(nxg, nyg, integ_df; T=2*pi/ω, max_res=5, num_step=6)
 
 plot(xg,yg,basin', seriestype=:heatmap)
 
