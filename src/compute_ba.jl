@@ -416,13 +416,13 @@ function get_IC_color!(bsn_nfo::basin_info, n,m)
 end
 
 
-function get_color_point!(bsn_nfo::basin_info, integ, x0, y0, T)
+function get_color_point!(bsn_nfo::basin_info, integ, x0, y0)
     # This routine identifies the attractor using the previously defined basin.
     # The idea is that is we hit the same basin 10 times
 
     # reinitialize integrator
     u0 =  [x0, y0]
-    bsn_nfo.reinit!(integ, u0)
+    bsn_nfo.reinit_f!(integ, u0)
     reset_bsn_nfo!(bsn_nfo)
 
     done = 0;
@@ -430,7 +430,7 @@ function get_color_point!(bsn_nfo::basin_info, integ, x0, y0, T)
 
     while done == 0
        old_u = integ.u
-       bsn_nfo.iter_f!(integ, T, true)
+       bsn_nfo.iter_f!(integ)
        new_u = integ.u
 
        n,m = get_box(new_u, bsn_nfo)

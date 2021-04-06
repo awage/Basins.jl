@@ -52,7 +52,7 @@ end
     @test (trunc(Sbb;digits=3) == 0.889)
 end
 
-@testset "Test wada_merge_dist" begin
+@testset "Test Wada detection" begin
     ω=0.5
     ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
     integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
@@ -66,6 +66,10 @@ end
     dmin = min_dist/epsilon
     @test (round(dmax) == 11.)
     @test (round(dmin) == 11.)
+
+    W = detect_wada_grid_method(integ, bsn_nfo; max_iter=4)
+    @test (trunc(W[3];digits=3) ==  0.627)
+
 end
 
 

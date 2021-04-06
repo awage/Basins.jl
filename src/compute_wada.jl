@@ -62,10 +62,9 @@ function wada_merge_dist(basin,y1,y2)
        if hd  < min_dist
            min_dist = hd
        end
-       #@show patron, hd
 
   end
-    #GC.gc()
+
    return max_dist, min_dist
 end
 
@@ -88,9 +87,6 @@ mutable struct ode_info{I}
     integ::I               # integrator
 end
 
-function init_ode_info(xg, yg, integ, bsn_nfo)
-    return ode_info(bsn_nfo, integ)
-end
 
 function reset_point_data!(ode_nfo)
     reset_bsn_nfo!(ode_nfo.bsn_nfo)
@@ -99,14 +95,14 @@ end
 
 function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 
-   ode_nfo = init_ode_info(integ, bsn_nfo)
-   num_att = length(unique(basin))
+   ode_nfo = ode_info(bsn_nfo, integ)
+   num_att = length(unique(bsn_nfo.basin))
 
    # helper function to obtain coordinates
    index_to_coord(p) = [bsn_nfo.xg[p[1]], bsn_nfo.yg[p[2]]]
 
    # obtain points in the boundary
-   bnd = get_boundary_filt(basin)
+   bnd = get_boundary_filt(bsn_nfo.basin)
    p1_ind = findall(bnd .> 0)
 
    # initialize empty array of indices and collection of empty sets of colors
@@ -116,7 +112,7 @@ function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 
    # Initialize matrices (step 1)
    for (k,p1) in enumerate(p1_ind)
-       p2, nbgs = get_neighbor_and_colors(basin, [p1[1], p1[2]])
+       p2, nbgs = get_neighbor_and_colors(bsn_nfo.basin, [p1[1], p1[2]])
        if length(nbgs) > 1
            # keep track of different colors and neighbor point
            push!(clr_mat[k],nbgs...)
@@ -141,12 +137,12 @@ function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 
        # Stopping criterion: if W[Na] in % increases less than ε  then stop or if we have more than 95% boxes in Na
        if  (abs(W[num_att,n] - W[num_att,n-1]) <0.01*W[num_att,n] || W[num_att,n] == 0.0 || W[num_att,n]/sum(W[:,n])>0.95) &&  n > num_att # make at least num_att iterations for stats
-           return W[:,1:n]
+           return W[:,n]./sum(W[:,1])
        end
 
    end
 
-   return W
+   return W[:,end]./sum(W[:,1])
 end
 
 

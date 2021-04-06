@@ -37,12 +37,18 @@ Now we define the grid of ICs that we want to analyze and launch the procedure:
 ```jl
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
-basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 ```
 
 The keyword arguments are:
 * `T` : the period of the stroboscopic map.
 * `idxs` : the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
+
+The function returns a structure `bsn` with several fields of interests:
+* `bsn.basin` is a matrix that contains the information of the basins of attraction. The attractors are numbered from 1 to N and each element
+correspond to an initial condition on the grid.
+* `bsn.xg` and `bsn.yg` are the grid vectors.
+* `bsn.attractors` is a collection of vectors with the location of the attractors found.
 
 
 Another example with a Poincaré map:
@@ -68,7 +74,7 @@ Once the integrator has been set, the Poincaré map can defined on a plane:
 ```jl
 xg=range(-1.,1.,length=200)
 yg=range(-1.5,1.5,length=200)
-basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
+bsn = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
 ```
 
 The keyword arguments are:
@@ -104,7 +110,7 @@ yg = range(-2.2,2.2,length=200)
 iter_f! = (integ) -> step!(integ, 2π/ω, true)
 reinit_f! =  (integ,y) ->  reinit!(integ, [y...])
 
-basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+bsn = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
 ```
 
 The following anonymous functions are important:
@@ -129,10 +135,10 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
-basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
 eps_x = 20; eps_y = 20;  
-Sb,Sbb = basin_entropy(basin, eps_x, eps_y)
+Sb,Sbb = basin_entropy(bsn.basin, eps_x, eps_y)
 ```
 The arguments of `basin_entropy` are:
 * `basin` : The basin computed on a grid.
@@ -155,9 +161,9 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
-basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
-bd = box_counting_dim(xg, yg, basin)
+bd = box_counting_dim(xg, yg, bsn.basin)
 
 # uncertainty exponent is the dimension of the plane minus the box-couting dimension
 ue = 2-bd
@@ -182,15 +188,37 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
-basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
-max_dist,min_dist = wada_merge_dist(basin,xg,yg)
+max_dist,min_dist = wada_merge_dist(bsn.basin,xg,yg)
 # grid resolution
 epsilon = xg[2]-xg[1]
 # if dmax is large then this is not Wada
 @show dmax = max_dist/epsilon
 @show dmin = min_dist/epsilon
 ```
+
+Another method available and much more accurate is the [Grid Method](https://doi.org/10.1038/srep16579). It divides the grid and scrutinize the boundary to test if all the attractors are present in every point of the boundary. It may be very long to get an answer since the number of points to test duplicates at each step. The algorithm returns a vector with the proportion of boxes with 1 to N attractor. For example if the vector W[N] is above 0.95 we have all the initial boxes in the boundary on the grid with N attractors. It is therefore a strong evidence that we have a Wada boundary.  
+
+
+### Usage
+
+```jl
+using DynamicalSystems
+using Basins
+ω=0.5
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+xg=range(-4,4,length=200)
+yg=range(-4,4,length=200)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+
+@show W = detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
+```
+
+The algorithm returns:
+* `W` contains a vector with the proportion of boxes in the boundary of `k` attractor. A good criterion to decide if the boundary is Wada is to look at `W[N]` with N the number of attractors. If this number is above 0.95 we can conclude that the boundary is Wada.  
+
 
 ## Computation of the Basin Stability
 
@@ -208,26 +236,5 @@ xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
 basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
-@show basin_stability(basin)
-```
-
-
-
-## Detection of fractal basins
-
-
-
-### Usage
-
-```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
-basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-
-@show basin_stability(basin)
+@show basin_stability(bsn.basin)
 ```
