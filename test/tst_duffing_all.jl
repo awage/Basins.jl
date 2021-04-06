@@ -14,20 +14,13 @@ end
 
 ω=0.1617
 F = 0.395
-p= [0.15, F, ω]
-ds = ContinuousDynamicalSystem(duffing, rand(2), p)
+ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+xg = range(-2.2,2.2,length=200)
+yg = range(-2.2,2.2,length=200)
 
 
-xres=200
-yres=200
-xg = range(-2.2,2.2,length=xres)
-yg = range(-2.,2.,length=yres)
-
-# compute basin
-iter_f! = (x) -> step!(x, 2*pi/ω, true)
-reinit_f! = (x, y) -> reinit!(x, y, t0=0, erase_sol=true,reinit_callbacks=true)
-@time basin=draw_basin(xg, yg, integ_df, iter_f!, reinit_f!)
+@time basin = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 
 
 # Basin entropy

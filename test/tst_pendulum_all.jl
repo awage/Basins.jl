@@ -2,7 +2,6 @@ using Revise
 using DifferentialEquations
 using Basins
 using Printf
-# Equations of motion:
 
 # Equations of motion:
 function forced_pendulum!(du, u, p, t)
@@ -11,20 +10,18 @@ function forced_pendulum!(du, u, p, t)
     du[2] = -d*u[2] - sin(u[1])+ F*cos(omega*t)
 end
 
+# We have to define a callback to wrap the phase in [-π,π]
 function affect!(integrator)
-if integrator.u[1] < 0
-    integrator.u[1] += 2*pi
-else
-    integrator.u[1] -= 2*pi
-end
-    #  integrator.u[1] = rem2pi(integrator.u[1] , RoundNearest) # wrap in -pi, pi
-  #println("EVENT ", integrator.u[1])
+    if integrator.u[1] < 0
+        integrator.u[1] += 2*π
+    else
+        integrator.u[1] -= 2*π
+    end
 end
 
-condition(u,t,integrator) = (integrator.u[1] < -pi  || integrator.u[1] > pi)
+condition(u,t,integrator) = (integrator.u[1] < -π  || integrator.u[1] > π)
 
 cb = DiscreteCallback(condition,affect!)
-#cb = ContinuousCallback(condition,affect!)
 
 #d, F ,w
 F = 1.66
@@ -58,7 +55,7 @@ epsilon = xg[2]-xg[1]
 W = compute_wada_W(xg, yg, integ_df, basin; T=2*pi/ω, max_iter=8)
 W=W./sum(W[:,1])
 @show W[:,end]
-r4
+
 # Uncertainty exponent for these parameter and grid
 D, ε, f_ε = uncertainty_dimension_sample(xg, yg, basin)
 

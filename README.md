@@ -16,9 +16,9 @@ The package provides the following metrics:
 
 ## Computing the basins of attraction
 
-The technique used to compute the basin of attraction is described in ref. [1]. It
-consists in tracking the trajectory on the plane and coloring the points of according to
-the attractor it leads to. This technique is very efficient for 2D basins.
+The technique used to compute the basin of attraction is described in ref. [1]. It consists in tracking the trajectory on the plane and coloring the points of according to the attractor it leads to. This technique is very efficient for 2D basins.
+
+The algorithm gives back a matrix with the attractor numbered from 1 to N. If an attractor exists outside the defined grid of if the trajectory escapes, this initial condition is labelled -1. It may happens for example if there is a fixed point not on the Poincaré map.
 
 ### Usage
 
@@ -115,7 +115,7 @@ initial conditions on the map must be set.
 
 ## Compute the Basin Entropy
 
-The [Basin Entropy](https://doi.org/10.1007/978-3-319-68109-2_2) is a measure of the impredcitibility of the system when considering the initial conditions.
+The [Basin Entropy](https://doi.org/10.1007/978-3-319-68109-2_2) is a measure of the impredictability of the basin of attraction of a dynamical system. An important feature of the basins of attraction is that for a value above log(2) we can say that the basin is fractalized.
 
 ### Usage
 
@@ -195,6 +195,27 @@ epsilon = xg[2]-xg[1]
 ## Computation of the Basin Stability
 
 The Basin Stability measures the relative sizes of the basin. Larger basin are considered more stable since a small perturbation or error in the initial conditions is less likely to change the attractor.
+
+### Usage
+
+```jl
+using DynamicalSystems
+using Basins
+ω=0.5
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+xg=range(-4,4,length=200)
+yg=range(-4,4,length=200)
+basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+
+@show basin_stability(basin)
+```
+
+
+
+## Detection of fractal basins
+
+
 
 ### Usage
 

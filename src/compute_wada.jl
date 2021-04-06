@@ -1,6 +1,4 @@
 
-export wada_merge_dist
-
 function get_boundary_filt(basin)
 
     # Kernel
@@ -88,16 +86,10 @@ end
 mutable struct ode_info{I}
     bsn_nfo::basin_info # basin info for BA routine
     integ::I               # integrator
-    T::Float64
 end
 
-function init_ode_info(xg, yg, integ_df, basin, T)
-
-    # define the step size of the integration
-
-    return ode_info(basin_info(basin, xg, yg,2,4,0,0,0,1,1,0,0),
-                    integ_df,
-                    T)
+function init_ode_info(xg, yg, integ, bsn_nfo)
+    return ode_info(bsn_nfo, integ)
 end
 
 function reset_point_data!(ode_nfo)
@@ -105,12 +97,14 @@ function reset_point_data!(ode_nfo)
 end
 
 
-function compute_wada_W(xg, yg, integ_df, basin; T=0., max_iter=10)
+function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 
-   ode_nfo = init_ode_info(xg, yg, integ_df, basin, T)
+   ode_nfo = init_ode_info(integ, bsn_nfo)
    num_att = length(unique(basin))
 
-   index_to_coord(p) = [xg[p[1]], yg[p[2]]]
+   # helper function to obtain coordinates
+   index_to_coord(p) = [bsn_nfo.xg[p[1]], bsn_nfo.yg[p[2]]]
+
    # obtain points in the boundary
    bnd = get_boundary_filt(basin)
    p1_ind = findall(bnd .> 0)
@@ -151,7 +145,7 @@ function compute_wada_W(xg, yg, integ_df, basin; T=0., max_iter=10)
        end
 
    end
-   #v_list=get_list(basin, y1, y2)
+
    return W
 end
 
@@ -197,7 +191,7 @@ function divide_and_test_W(ode_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt[1],pnt[2], ode_nfo.T)
+        clr = get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt[1],pnt[2])
         push!(clrs, clr)
         if length(clrs)  == Na
             break

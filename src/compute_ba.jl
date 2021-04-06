@@ -1,9 +1,11 @@
 
 
-mutable struct basin_info{I,F}
+mutable struct basin_info{I,F,V}
     basin :: I
     xg :: F
     yg :: F
+    iter_f! :: Function
+    reinit_f! :: Function
     current_color :: Int64
     next_avail_color :: Int64
     consecutive_match :: Int64
@@ -13,6 +15,7 @@ mutable struct basin_info{I,F}
     prev_bas :: Int64
     prev_step :: Int64
     step :: Int64
+    attractors :: V
 end
 
 
@@ -179,14 +182,13 @@ for higher level functions see: `basin_poincare_map`, `basin_discrete_map`, `bas
 * `iter_f!` : function that iterates the map or the system, see step! from DifferentialEquations.jl and
 examples for a Poincaré map of a continuous system.
 * `reinit_f!` : function that sets the initial condition to test.
-
 """
 function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 
 
     complete = 0;
 
-    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, 2,4,0,0,0,1,1,0,0)
+    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, 2,4,0,0,0,1,1,0,0,[])
 
     reset_bsn_nfo!(bsn_nfo)
 
@@ -234,11 +236,17 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
          end
     end
 
-    ind = findall(iseven.(bsn_nfo.basin) .== true)
-    [ bsn_nfo.basin[k]=bsn_nfo.basin[k]+1 for k in ind ]
+    Natt = (maximum(bsn_nfo.basin) - 1)/2
+    for k in 1:Natt
+        ind  = findall(bsn_nfo.basin .== k*2)
+        [push!(bsn_nfo.attractors, [xg[p[1]],yg[p[2]]]) for p in ind]
+    end
+
+    ind  = findall(iseven.(bsn_nfo.basin) .== true)
+    [ bsn_nfo.basin[k] = bsn_nfo.basin[k]+1 for k in ind ]
     bsn_nfo.basin = (bsn_nfo.basin .- 1).//2
 
-    return bsn_nfo.basin
+    return bsn_nfo
 end
 
 
@@ -285,9 +293,18 @@ function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.,
     basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
 end
 
+function _initf(integ, y, idxs, plane)
+    j = plane[1]; v = plane[2]; # take care of the plane
+    u = zeros(1,length(integ.u))
+    u[idxs] = y
+    u[j] = v
+    # all other coordinates are zero
+    reinit!(integ, u)
+end
+
 
 """
-	poincaremap!(integ, f, planecrossing,  idxs, rootkw, Tmax)
+	poincaremap!(integ, f, planecrossing, Tmax, idxs, rootkw)
 Low level function that actual performs the algorithm of finding the next crossing
 of the Poincaré surface of section.
 """
@@ -324,14 +341,6 @@ function poincaremap!(integ, f, planecrossing, Tmax, idxs, rootkw)
 end
 
 
-function _initf(integ, y, idxs, plane)
-    j = plane[1]; v = plane[2]; # take care of the plane
-    u = zeros(1,length(integ.u))
-    u[idxs] = y
-    u[j] = v
-    # all other coordinates are zero
-    reinit!(integ, u)
-end
 
 
 
@@ -413,7 +422,7 @@ function get_color_point!(bsn_nfo::basin_info, integ, x0, y0, T)
 
     # reinitialize integrator
     u0 =  [x0, y0]
-    reinit!(integ, u0, t0=0, erase_sol=true)
+    bsn_nfo.reinit!(integ, u0)
     reset_bsn_nfo!(bsn_nfo)
 
     done = 0;
@@ -421,7 +430,7 @@ function get_color_point!(bsn_nfo::basin_info, integ, x0, y0, T)
 
     while done == 0
        old_u = integ.u
-       step!(integ, T, true)
+       bsn_nfo.iter_f!(integ, T, true)
        new_u = integ.u
 
        n,m = get_box(new_u, bsn_nfo)
