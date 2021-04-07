@@ -96,5 +96,5 @@ end
     bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
     bd = box_counting_dim(xg, yg, bsn_nfo.basin)
 
-    @test (trunc(bd;digits=3) == 1.733)
+    @test (trunc(bd;digits=3) == 1.669)
 end
