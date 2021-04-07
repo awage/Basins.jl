@@ -137,8 +137,7 @@ xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
 bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
-eps_x = 20; eps_y = 20;  
-Sb,Sbb = basin_entropy(bsn.basin, eps_x, eps_y)
+Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
 ```
 The arguments of `basin_entropy` are:
 * `basin` : The basin computed on a grid.
@@ -174,6 +173,8 @@ ue = 2-bd
 
 ## Detection of the property of Wada
 
+### Merge Method
+
 The [Wada property](https://en.wikipedia.org/wiki/Lakes_of_Wada) in basins of attraction is an amazing feature of some basins. It is not trivial at all to demonstrate rigurously this property. There are however computational approaches that gives hints about the presence of this property in a basin of attraction. One of the fastest approach is the [Merging Method](https://doi.org/10.1038/s41598-018-28119-0). The algorithm gives the maximum and minimum Haussdorff distances between merged basins. A good rule of thumb to discard the Wada property is to check if the maximum distance is large in comparison to the resolution of the basin, i.e., if the number of pixel is large.
 
 Notice that the algorithm gives an answer for a particular choice of the grid. It is not an accurate method.
@@ -190,13 +191,15 @@ xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
 bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
-max_dist,min_dist = wada_merge_dist(bsn.basin,xg,yg)
+max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn.basin)
 # grid resolution
 epsilon = xg[2]-xg[1]
 # if dmax is large then this is not Wada
 @show dmax = max_dist/epsilon
 @show dmin = min_dist/epsilon
 ```
+
+### Grid Method
 
 Another method available and much more accurate is the [Grid Method](https://doi.org/10.1038/srep16579). It divides the grid and scrutinize the boundary to test if all the attractors are present in every point of the boundary. It may be very long to get an answer since the number of points to test duplicates at each step. The algorithm returns a vector with the proportion of boxes with 1 to N attractor. For example if the vector W[N] is above 0.95 we have all the initial boxes in the boundary on the grid with N attractors. It is therefore a strong evidence that we have a Wada boundary.  
 
@@ -243,10 +246,13 @@ basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 ### References
 
 [1] H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
-[2] A. Daza, A. Wagemakers, B. Georgeot, D. Guéry-Odelin and M. A. F. Sanjuán, Basin entropy:
-a new tool to analyze uncertainty in dynamical systems, Sci. Rep., 6 (2016), 31416.
-[3] A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the
-merging method, Sci. Rep., 8 (2018), 9954.
-[4] A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada,
-Sci. Rep., 5 (2015), 16579.
-	
+
+[2] A. Daza, A. Wagemakers, B. Georgeot, D. Guéry-Odelin and M. A. F. Sanjuán, Basin entropy: a new tool to analyze uncertainty in dynamical systems, Sci. Rep., 6, 31416 (2016).
+
+[3] C. Grebogi, S. W. McDonald, E. Ott, J. A. Yorke, Final state sensitivity: An obstruction to predictability, Physics Letters A, 99, 9, 1983
+
+[4] A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the merging method, Sci. Rep., 8, 9954 (2018).
+
+[5] A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada, Sci. Rep., 5, 16579 (2015).
+
+[6] P. Menck, J. Heitzig, N. Marwan et al. How basin stability complements the linear-stability paradigm. Nature Phys 9, 89–92 (2013).

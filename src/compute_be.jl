@@ -1,6 +1,21 @@
 
-# Compute Sb and Sbb Boundary Basin Entropy
-function basin_entropy(basin, eps_x, eps_y)
+"""
+    basin_entropy(basin; eps_x=20, eps_y=20)
+This algorith computes the basin entropy of a computed basin of attraction on a regular grid.
+The function return the basin entropy and the boundary basin entropy.
+
+[A. Daza, A. Wagemakers, B. Georgeot, D. Guéry-Odelin and M. A. F. Sanjuán, Basin entropy:
+a new tool to analyze uncertainty in dynamical systems, Sci. Rep., 6, 31416, (2016).]
+
+## Arguments
+* `basin` : the matrix containing the information of the basin.
+
+## Keyword arguments
+* `eps_x`, `eps_y` : define the size of the box that will be used to sample the basin
+
+
+"""
+function basin_entropy(basin; eps_x=20, eps_y=20)
 r,c= size(basin)
 vals = unique(basin)
 S=Int16(length(vals))
@@ -34,7 +49,17 @@ function entropy(p)
     return h
 end
 
+"""
+    basin_stability(basin)
+This algorith computes the basin stability of a computed basin of attraction on a regular grid.
+This function returns a vector with the relative volume of the basins.
 
+[P. Menck, J. Heitzig, N. Marwan et al. How basin stability complements the linear-stability paradigm. Nature Phys 9, 89–92 (2013).]
+
+## Arguments
+* `basin` : the matrix containing the information of the basin.
+
+"""
 function basin_stability(basin)
 
 N = length(unique(basin))

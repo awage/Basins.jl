@@ -47,7 +47,7 @@ end
     xg=range(-2,2,length=100)
     yg=range(-2,2,length=100)
     bsn_nfo = basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-    Sb,Sbb = basin_entropy(bsn_nfo.basin, 20, 20)
+    Sb,Sbb = basin_entropy(bsn_nfo.basin; eps_x=20, eps_y=20)
     @test (trunc(Sb;digits=3) == 0.853)
     @test (trunc(Sbb;digits=3) == 0.889)
 end
@@ -60,7 +60,7 @@ end
     yg=range(-2,2,length=100)
     bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
     # Wada merge Haussdorff distances
-    max_dist,min_dist = wada_merge_dist(bsn_nfo.basin,xg,yg)
+    max_dist,min_dist = detect_wada_merge_method(xg,yg,bsn_nfo.basin)
     epsilon = xg[2]-xg[1]
     dmax = max_dist/epsilon
     dmin = min_dist/epsilon

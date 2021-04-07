@@ -10,7 +10,7 @@ function get_boundary_filt(basin)
 
 end
 
-function get_list(basin,y1 ,y2)
+function get_list(basin,xg ,yg)
 
     num_att = length(unique(basin))
 
@@ -21,7 +21,7 @@ function get_list(basin,y1 ,y2)
     # original boundary
     bnd = get_boundary_filt(basin)
     I1=findall(bnd .== 1);
-    push!(v_list , hcat([[y1[ind[1]]; y2[ind[2]]] for ind in I1 ]...))
+    push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
 
     # Merging !!
     basin_i_j = zeros(Int8,size(basin))
@@ -33,15 +33,40 @@ function get_list(basin,y1 ,y2)
         bnd = get_boundary_filt(basin_i_j)
         I1=findall(bnd .== 1);
         # Get coordinates lists from matrix
-        push!(v_list , hcat([[y1[ind[1]]; y2[ind[2]]] for ind in I1 ]...))
+        push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
     end
     return v_list
 end
 
-function wada_merge_dist(basin,y1,y2)
+
+
+
+"""
+    detect_wada_merge_method(xg,yg, basin)
+The algorithm gives the maximum and minimum Haussdorff distances between merged basins. These two distances can help to decide if the basin has the Wada property.
+
+[A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the
+merging method, Sci. Rep., 8 (2018), 9954.]
+
+## Arguments
+* `basin` : the matrix containing the information of the basin.
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+
+## Example
+```
+max_dist,min_dist = detect_wada_merge_method(basin,xg,yg)
+# grid resolution
+epsilon = xg[2]-xg[1]
+# if dmax is large then this is not Wada
+@show dmax = max_dist/epsilon
+@show dmin = min_dist/epsilon
+```
+
+"""
+function detect_wada_merge_method(xg,yg,basin)
     num_att = length(unique(basin))
 
-    v_list=get_list(basin, y1, y2)
+    v_list=get_list(basin, xg, yg)
 
     # compute distances using combbinations of 2 elements from a collection
     ind = combinations(1:num_att,2)
@@ -93,7 +118,22 @@ function reset_point_data!(ode_nfo)
 end
 
 
-function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
+"""
+    detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
+The algorithm test for Wada basin in a dynamical system. It uses the dynamical system to look if all the atractors are represented in the boundary.
+
+[A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada,
+Sci. Rep., 5 (2015), 16579.]
+
+## Arguments
+* `integ` : the matrix containing the information of the basin.
+* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
+
+## Keyword arguments
+* `max_iter` : set the maximum depth of subdivisions to look for an atractor. The number of points doubles at each step.
+
+"""
+function detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
 
    ode_nfo = ode_info(bsn_nfo, integ)
    num_att = length(unique(bsn_nfo.basin))

@@ -178,7 +178,7 @@ for higher level functions see: `basin_poincare_map`, `basin_discrete_map`, `bas
 
 ## Arguments
 * `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
-* `integ` : integrator handle for a system defined on a plane.
+* `integ` : integrator handle of the dynamical system.
 * `iter_f!` : function that iterates the map or the system, see step! from DifferentialEquations.jl and
 examples for a Poincaré map of a continuous system.
 * `reinit_f!` : function that sets the initial condition to test.
@@ -255,9 +255,11 @@ end
     basin_poincare_map(xg, yg, integ; kwargs...)
 Compute an estimate of the basin of attraction on a two-dimensional plane using a Poincaré map.
 
+[H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012]
+
 ## Arguments
 * `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
-* `integ` : integrator handle for a system defined on a plane.
+* `integ` : integrator handle of the dynamical system.
 
 ## Keyword Arguments
 * `plane` A `Tuple{Int, <: Number}`, like `(j, r)` : the plane is defined
@@ -350,7 +352,7 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
 
 ## Arguments
 * `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
-* `integ` : integrator handle for a system defined on a plane.
+* `integ` : integrator handle of the dynamical system.
 
 ## Keyword Arguments
 * `T` : Period of the stroboscopic map
@@ -377,7 +379,7 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
 
 ## Arguments
 * `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
-* `integ` : integrator handle for a system defined on a plane.
+* `integ` : integrator of the discrete system
 
 ## Keyword Arguments
 * `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to the entire state.
@@ -392,7 +394,7 @@ end
 
 
 
-# identify an attractor
+# identify an attractor from the basin.
 function get_IC_color!(bsn_nfo::basin_info, n,m)
     bsn_nfo.step += 1
     next_c = bsn_nfo.basin[n,m]
@@ -439,6 +441,7 @@ function get_color_point!(bsn_nfo::basin_info, integ, x0, y0)
            done = get_IC_color!(bsn_nfo, n, m)
            inlimbo = 0
        else
+           # We are outside the defined grid
            inlimbo +=1
        end
 
@@ -447,6 +450,6 @@ function get_color_point!(bsn_nfo::basin_info, integ, x0, y0)
        end
 
     end
-    #@show done
+
     return done
 end

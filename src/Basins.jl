@@ -8,7 +8,7 @@ using NearestNeighbors
 using Combinatorics
 using Roots
 
-export draw_basin, basin_entropy, detect_wada_grid_method, wada_merge_dist
+export draw_basin, basin_entropy, detect_wada_grid_method, detect_wada_merge_method
 export basin_poincare_map, basin_stroboscopic_map, basin_discrete_map, box_counting_dim
 export basin_stability
 

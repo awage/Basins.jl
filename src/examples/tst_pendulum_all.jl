@@ -43,10 +43,10 @@ yg = range(-2.,4.,length=yres)
 @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
-@show Sb,Sbb = basin_entropy(bsn.basin, 20, 20)
+@show Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
 
 # Wada merge Haussdorff distances
-@time max_dist,min_dist = wada_merge_dist(bsn.basin,xg,yg)
+@time max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn.basin)
 epsilon = xg[2]-xg[1]
 @show dmax = max_dist/epsilon
 @show dmin = min_dist/epsilon
