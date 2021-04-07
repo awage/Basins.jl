@@ -14,7 +14,7 @@ The package provides the following metrics:
 - Basin stability
 
 
-## Computing the basins of attraction
+## 1 - Computing the basins of attraction
 
 The technique used to compute the basin of attraction is described in ref. [1]. It consists in tracking the trajectory on the plane and coloring the points of according to the attractor it leads to. This technique is very efficient for 2D basins.
 
@@ -85,7 +85,7 @@ The keyword arguments are:
 * `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
 
 
-### Custom differential equations and low level functions.
+## 2 - Custom differential equations and low level functions.
 
 Supose we want to define a custom ODE and compute the basin of attraction on a defined
 Poincaré map:
@@ -119,7 +119,7 @@ The following anonymous functions are important:
 initial conditions on the map must be set.
 
 
-## Compute the Basin Entropy
+## 3 - Compute the Basin Entropy
 
 The [Basin Entropy](https://doi.org/10.1007/978-3-319-68109-2_2) is a measure of the impredictability of the basin of attraction of a dynamical system. An important feature of the basins of attraction is that for a value above log(2) we can say that the basin is fractalized.
 
@@ -144,7 +144,7 @@ The arguments of `basin_entropy` are:
 * `eps_x`, `eps_y` : size of the window that samples the basin to compute the entropy.
 
 
-## Compute the uncertainty exponent of a basin of attraction
+## 4 - Compute the uncertainty exponent of a basin of attraction
 
 The [uncertainty exponent](https://en.wikipedia.org/wiki/Uncertainty_exponent) is conected to the [box-counting dimension](https://en.wikipedia.org/wiki/Box-counting_dimension). For a given resolution of the original basin, a sampling of the basin is done until the the fraction of uncertain boxes converges. The process is repeated for different box sizes and then the exponent is estimated.
 
@@ -171,9 +171,9 @@ ue = 2-bd
 
 
 
-## Detection of the property of Wada
+## 5 - Detection of the property of Wada
 
-### Merge Method
+### 5.1 - Merge Method
 
 The [Wada property](https://en.wikipedia.org/wiki/Lakes_of_Wada) in basins of attraction is an amazing feature of some basins. It is not trivial at all to demonstrate rigurously this property. There are however computational approaches that gives hints about the presence of this property in a basin of attraction. One of the fastest approach is the [Merging Method](https://doi.org/10.1038/s41598-018-28119-0). The algorithm gives the maximum and minimum Haussdorff distances between merged basins. A good rule of thumb to discard the Wada property is to check if the maximum distance is large in comparison to the resolution of the basin, i.e., if the number of pixel is large.
 
@@ -199,7 +199,7 @@ epsilon = xg[2]-xg[1]
 @show dmin = min_dist/epsilon
 ```
 
-### Grid Method
+### 5.2 - Grid Method
 
 Another method available and much more accurate is the [Grid Method](https://doi.org/10.1038/srep16579). It divides the grid and scrutinize the boundary to test if all the attractors are present in every point of the boundary. It may be very long to get an answer since the number of points to test duplicates at each step. The algorithm returns a vector with the proportion of boxes with 1 to N attractor. For example if the vector W[N] is above 0.95 we have all the initial boxes in the boundary on the grid with N attractors. It is therefore a strong evidence that we have a Wada boundary.  
 
@@ -223,7 +223,7 @@ The algorithm returns:
 * `W` contains a vector with the proportion of boxes in the boundary of `k` attractor. A good criterion to decide if the boundary is Wada is to look at `W[N]` with N the number of attractors. If this number is above 0.95 we can conclude that the boundary is Wada.  
 
 
-## Computation of the Basin Stability
+## 6 - Computation of the Basin Stability
 
 The Basin Stability [6] measures the relative sizes of the basin. Larger basin are considered more stable since a small perturbation or error in the initial conditions is less likely to change the attractor.
 
@@ -243,7 +243,7 @@ basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 ```
 
 
-### References
+## References
 
 [1] H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
 
