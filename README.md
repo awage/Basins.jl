@@ -238,3 +238,15 @@ basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
 @show basin_stability(bsn.basin)
 ```
+
+
+### References
+
+[1] H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
+[2] A. Daza, A. Wagemakers, B. Georgeot, D. Guéry-Odelin and M. A. F. Sanjuán, Basin entropy:
+a new tool to analyze uncertainty in dynamical systems, Sci. Rep., 6 (2016), 31416.
+[3] A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the
+merging method, Sci. Rep., 8 (2018), 9954.
+[4] A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada,
+Sci. Rep., 5 (2015), 16579.
+	

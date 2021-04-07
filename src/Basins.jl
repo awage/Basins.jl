@@ -17,5 +17,6 @@ include("compute_ba.jl")
 include("compute_be.jl")
 include("compute_uncertain_dim.jl")
 include("compute_wada.jl")
+#include("straddle.jl")
 
 end
