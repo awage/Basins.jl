@@ -45,8 +45,7 @@ end
     detect_wada_merge_method(xg,yg, basin)
 The algorithm gives the maximum and minimum Haussdorff distances between merged basins. These two distances can help to decide if the basin has the Wada property.
 
-[A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the
-merging method, Sci. Rep., 8 (2018), 9954.]
+[A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the merging method, Sci. Rep., 8, 9954 (2018)]
 
 ## Arguments
 * `basin` : the matrix containing the information of the basin.
@@ -122,8 +121,7 @@ end
     detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
 The algorithm test for Wada basin in a dynamical system. It uses the dynamical system to look if all the atractors are represented in the boundary.
 
-[A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada,
-Sci. Rep., 5 (2015), 16579.]
+[A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada, Sci. Rep., 5, 16579 (2015)]
 
 ## Arguments
 * `integ` : the matrix containing the information of the basin.

@@ -85,3 +85,16 @@ end
     @test (trunc(bs[2];digits=3) == 0.328)
     @test (trunc(bs[3];digits=3) == 0.343)
 end
+
+
+@testset "Test box_counting_dimension" begin
+    ω=0.5
+    ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
+    integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+    xg=range(-2,2,length=100)
+    yg=range(-2,2,length=100)
+    bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+    bd = box_counting_dim(xg, yg, bsn_nfo.basin)
+
+    @test (trunc(bd;digits=3) == 1.733)
+end

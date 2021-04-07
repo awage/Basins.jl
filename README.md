@@ -225,7 +225,7 @@ The algorithm returns:
 
 ## Computation of the Basin Stability
 
-The Basin Stability measures the relative sizes of the basin. Larger basin are considered more stable since a small perturbation or error in the initial conditions is less likely to change the attractor.
+The Basin Stability [6] measures the relative sizes of the basin. Larger basin are considered more stable since a small perturbation or error in the initial conditions is less likely to change the attractor.
 
 ### Usage
 
