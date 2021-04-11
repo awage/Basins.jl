@@ -58,7 +58,7 @@ plot(xg,yg,bsn.basin', seriestype=:heatmap)
 
 ```
 
-https://imgur.com/a/mg06KQn
+https://i.imgur.com/EBWw1GK.png
 
 Another example with a Poincaré map:
 ```jl
