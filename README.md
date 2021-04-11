@@ -221,11 +221,11 @@ using Basins
 ω=0.5
 ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
+xg=range(-2.5,2.5,length=100)
+yg=range(-2.5,2.5,length=100)
 bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
-@show W = detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
+@show W = detect_wada_grid_method(integ, bsn; max_iter=10)
 ```
 
 The algorithm returns:
@@ -246,11 +246,14 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 xg=range(-4,4,length=200)
 yg=range(-4,4,length=200)
-basin=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
 @show basin_stability(bsn.basin)
 ```
 
+## 7 - More examples
+
+You can find more examples in `src/examples`
 
 ## References
 
