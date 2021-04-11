@@ -35,8 +35,8 @@ integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
 Now we define the grid of ICs that we want to analyze and launch the procedure:
 
 ```jl
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
+xg=range(-2,2,length=200)
+yg=range(-2,2,length=200)
 bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 ```
 
@@ -50,6 +50,15 @@ correspond to an initial condition on the grid.
 * `bsn.xg` and `bsn.yg` are the grid vectors.
 * `bsn.attractors` is a collection of vectors with the location of the attractors found.
 
+Now we can plot the nice result of the computation:
+
+```jl
+using Plots
+plot(xg,yg,bsn.basin', seriestype=:heatmap)
+
+```
+
+https://imgur.com/a/mg06KQn
 
 Another example with a Poincaré map:
 ```jl
