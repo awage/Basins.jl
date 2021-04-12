@@ -225,7 +225,7 @@ function divide_and_test_W(ode_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt[1],pnt[2])
+        clr = get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt)
         push!(clrs, clr)
         if length(clrs)  == Na
             break

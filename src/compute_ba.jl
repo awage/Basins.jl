@@ -239,7 +239,7 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
     Natt = (maximum(bsn_nfo.basin) - 1)/2
     for k in 1:Natt
         ind  = findall(bsn_nfo.basin .== k*2)
-        [push!(bsn_nfo.attractors, [xg[p[1]],yg[p[2]]]) for p in ind]
+        [push!(bsn_nfo.attractors, [k, xg[p[1]],yg[p[2]]]) for p in ind]
     end
 
     ind  = findall(iseven.(bsn_nfo.basin) .== true)
@@ -410,7 +410,7 @@ function get_IC_color!(bsn_nfo::basin_info, n,m)
             bsn_nfo.prevConsecutives =1
         end
 
-        if bsn_nfo.prevConsecutives >=5
+        if bsn_nfo.prevConsecutives >=10
             reset_bsn_nfo!(bsn_nfo)
             return next_c
         end
@@ -418,12 +418,11 @@ function get_IC_color!(bsn_nfo::basin_info, n,m)
 end
 
 
-function get_color_point!(bsn_nfo::basin_info, integ, x0, y0)
+function get_color_point!(bsn_nfo::basin_info, integ, u0)
     # This routine identifies the attractor using the previously defined basin.
     # The idea is that is we hit the same basin 10 times
 
     # reinitialize integrator
-    u0 =  [x0, y0]
     bsn_nfo.reinit_f!(integ, u0)
     reset_bsn_nfo!(bsn_nfo)
 
