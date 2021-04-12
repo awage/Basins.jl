@@ -252,8 +252,19 @@ function get_color_precise!(bsn_nfo::basin_info, integ, u0)
     return done
 end
 
-# Experiment: compute the basin when the attractors are known
+
+
+"""
+    compute_basin_precise(bsn_nfo::basin_info, integ)
+Compute the basin of attraction using only the attractors. The attractors must have been found previously in `bsn_nfo.attractors`
+
+## Arguments
+* `integ` : the matrix containing the information of the basin.
+* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
+
+"""
 function compute_basin_precise(bsn_nfo::basin_info, integ)
+    # Experiment: compute the basin when the attractors are known
 
 
 new_bas = zeros(Int16, size(bsn_nfo.basin))
