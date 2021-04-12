@@ -142,10 +142,6 @@ function compute_saddle(bsn_nfo::basin_info, integ, bas_A, bas_B; N=100)
     end
 
 
-    @show get_color_precise!(bsn_nfo,integ,u_A) ∈ bas_A
-
-    @show get_color_precise!(bsn_nfo,integ,u_B) ∈ bas_B
-
     saddle_series_A = Array{typeof(u_A),1}(undef, N)
     saddle_series_B = Array{typeof(u_A),1}(undef, N)
     u_A_it = u_B_it = [0.,0.]
@@ -178,8 +174,6 @@ function compute_saddle(bsn_nfo::basin_info, integ, bas_A, bas_B; N=100)
             Ttr= 20; # skip 20 points
         else
             if Ttr <= 0 &&  dist < tol
-                #push!(saddle_series_A, u_A);
-                #push!(saddle_series_B, u_B);
                 saddle_series_A[k]=u_A
                 saddle_series_B[k]=u_B
                 k +=1
