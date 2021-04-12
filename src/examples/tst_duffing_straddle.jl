@@ -25,7 +25,7 @@ yg = range(-2.2,2.2,length=100)
 
 
 
-sa,sb = compute_saddle(bsn, integ_df, [1], [2],100)
+sa,sb = compute_saddle(integ_df, bsn, [1], [2],100)
 
 
 
@@ -74,7 +74,7 @@ yg = range(-2.,4.,length=yres)
 
 Na = length(unique(bsn.basin))
 
-sa,sb = compute_saddle(bsn, integ_df, [1], [2,3],1000)
+sa,sb = compute_saddle(integ_df, bsn, [1], [2,3],10000)
 
 plot(xg,yg,bsn.basin', seriestype=:heatmap)
 s = Dataset(sa)

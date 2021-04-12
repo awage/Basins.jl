@@ -11,6 +11,7 @@ The package provides the following metrics:
 - Uncertainty exponent
 - Basin entropy
 - Wada detection
+- Basin saddles
 - Basin stability
 
 
@@ -232,7 +233,39 @@ The algorithm returns:
 * `W` contains a vector with the proportion of boxes in the boundary of `k` attractor. A good criterion to decide if the boundary is Wada is to look at `W[N]` with N the number of attractors. If this number is above 0.95 we can conclude that the boundary is Wada.  
 
 
-## 6 - Computation of the Basin Stability
+## 6 - Computation of the saddle embedded in the boundary
+
+There is an invariant subset of the boundary which is invariant under the forward iteration of the dynamical system. This set is called the chaotic set, chaotic saddle or simply saddle set. It is possible to compute an approximation arbitrarily close to the saddle with the saddle straddle method. For a detailed description of the method see [1]. This method requires two `generalized basins` such that the algorithm focus on the boundary between these two sets. We divide the basins in two class such that  `bas_A ∪ bas_B = [1:N]` and `bas_A ∩ bas_B = ∅` with `N` the number of attractors.
+
+### Usage
+
+
+```jl
+using DynamicalSystems
+using Basins
+ω=0.5
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+xg=range(-2.5,2.5,length=100)
+yg=range(-2.5,2.5,length=100)
+bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+
+sa,sb = compute_saddle(integ, bsn, [1], [2,3], 1000)
+
+```
+
+
+The arguments of `compute_saddle` are:
+* `integ` : the matrix containing the information of the basin.
+* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
+* `bas_A` : vector with the indices of the attractors that will represent the generalized basin A
+* `bas_B` : vector with the indices of the attractors that will represent the generalized basin B. Notice that `bas_A ∪ bas_B = [1:N]` and `bas_A ∩ bas_B = ∅`
+
+Keyword arguments are:
+* `N` : number of points of the saddle to compute
+
+
+## 7 - Computation of the Basin Stability
 
 The Basin Stability [6] measures the relative sizes of the basin. Larger basin are considered more stable since a small perturbation or error in the initial conditions is less likely to change the attractor.
 
@@ -251,7 +284,7 @@ bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 @show basin_stability(bsn.basin)
 ```
 
-## 7 - More examples
+## 8 - More examples
 
 You can find more examples in `src/examples`
 
