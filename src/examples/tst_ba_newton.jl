@@ -28,10 +28,11 @@ yg=range(-1.5,1.5,length=200)
 
 @time bsn=basin_discrete_map(xg, yg, integ)
 
+plot(xg,yg,bsn.basin',seriestype=:heatmap)
+
 
 
 sa,sb = compute_saddle(integ, bsn, [1], [2,3]; N=100)
 
-plot(xg,yg,bsn.basin',seriestype=:heatmap)
 s=Dataset(sa)
 plot!(s[:,1],s[:,2],seriestype=:scatter)

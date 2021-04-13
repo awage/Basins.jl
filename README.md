@@ -22,7 +22,7 @@ The technique used to compute the basin of attraction is described in ref. [1]. 
 
 The algorithm gives back a matrix with the attractor numbered from 1 to N. If an attractor exists outside the defined grid of if the trajectory escapes, this initial condition is labelled -1. It may happens for example if there is a fixed point not on the Poincaré map.
 
-### 1.1 Stroboscopic Maps
+### 1.1 - Stroboscopic Maps
 
 First define a dynamical system on the plane, for example with a *stroboscopic* map or Poincaré section. For example we can set up an dynamical system with a stroboscopic map defined:
 
@@ -62,32 +62,25 @@ plot(xg,yg,bsn.basin', seriestype=:heatmap)
 
 ![image](https://i.imgur.com/EBWw1GK.png)
 
-### 1.2 Poincaré Maps
+### 1.2 - Poincaré Maps
 
 Another example with a Poincaré map:
 ```jl
-# Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model
-# Chaos 18, 033121 (2008); https://doi.org/10.1063/1.2953589
-@inline @inbounds function lorenz84(u, p, t)
-    F = p[1]; G = p[2]; a = p[3]; b = p[4]
-	  x = u[1]; y = u[2]; z = u[3]
-    dx = -y^2 -z^2 -a*x + a*F
-    dy = x*y - y - b*x*z +G
-	  dz = b*x*y + x*z -z
-    return SVector{3}(dx, dy, dz)
-end
+using Plots
+using DynamicalSystems
+using Basins
 
-F=6.846; G=1.287; a=0.25; b=4.;
-ds = ContinuousDynamicalSystem(lorenz84, rand(3), [F, G, a,b])
-integ  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+ds = Systems.rikitake(μ = 0.47, α = 1.0)
+integ=integrator(ds)
 ```
 
 Once the integrator has been set, the Poincaré map can defined on a plane:
 
 ```jl
-xg=range(-1.,1.,length=200)
-yg=range(-1.5,1.5,length=200)
-bsn = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
+xg=range(-6.,6.,length=200)
+yg=range(-6.,6.,length=200)
+@time bsn = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
+plot(xg,yg,bsn.basin',seriestype=:heatmap)
 ```
 
 The keyword arguments are:
@@ -97,7 +90,11 @@ The keyword arguments are:
   vector correspond to ``\\mathbf{a}`` while the last element is ``b``.
 * `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
 
-### 1.3 Discrete Maps
+
+![image](https://imgur.com/hKcOiwTl.png)
+
+
+### 1.3 - Discrete Maps
 
 The process to compute the basin of a discrete map is very similar:
 
@@ -126,7 +123,11 @@ yg=range(-1.5,1.5,length=200)
 
 bsn=basin_discrete_map(xg, yg, integ)
 ```
-### 1-4 - Custom differential equations and low level functions.
+
+![image](https://imgur.com/ppHlGPbl.png)
+
+
+### 1.4 - Custom differential equations and low level functions.
 
 Supose we want to define a custom ODE and compute the basin of attraction on a defined
 Poincaré map:
@@ -160,7 +161,7 @@ The following anonymous functions are important:
 initial conditions on the map must be set.
 
 
-### 1.5 Notes about the method
+### 1.5 - Notes about the method
 
 The algorithm search for the attractors on the grid and then identify the "color" of the
 initial condition with two basic methods:
@@ -315,6 +316,9 @@ The arguments of `compute_saddle` are:
 
 Keyword arguments are:
 * `N` : number of points of the saddle to compute
+
+
+![image](https://imgur.com/pQLDO0Ol.png)
 
 
 ## 6 - Computation of the Basin Stability

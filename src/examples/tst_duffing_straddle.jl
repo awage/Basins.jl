@@ -61,8 +61,8 @@ p=[d, F, ω]
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), p)
 integ_df  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
 
-xres=100
-yres=100
+xres=200
+yres=200
 
 # range for forced pend
 xg = range(-pi,pi,length=xres)
@@ -77,4 +77,4 @@ sa,sb = compute_saddle(integ_df, bsn, [1], [2,3]; N=10000)
 
 plot(xg,yg,bsn.basin', seriestype=:heatmap)
 s = Dataset(sa)
-plot!(s[:,1],s[:,2],seriestype=:scatter)
+plot!(s[:,1],s[:,2],seriestype=:scatter, markercolor=:blue)
