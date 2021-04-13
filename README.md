@@ -8,12 +8,13 @@ This package depends heavily on the package DynamicalSystems and DifferentialEqu
 
 The package provides the following metrics:
 
-- Uncertainty exponent
-- Basin entropy
-- Wada detection
-- Basin saddles
-- Basin stability
-
+1. Basins of attraction
+2. Basin entropy
+3. Uncertainty exponent
+4. Wada detection
+5. Basin saddles
+6. Basin stability
+7. Examples
 
 ## 1 - Computing the basins of attraction
 
