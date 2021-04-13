@@ -1,3 +1,8 @@
+# 0.3.1
+* Some docs changes.
+* added parameters to compute_basin_precise
+* improved attractors localization
+
 # 0.3.0
 * Solve problem with the computation of basins (integ.u[idxs])
 * added feature: straddle saddle of basins (still experimental)

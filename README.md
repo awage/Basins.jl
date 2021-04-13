@@ -125,30 +125,7 @@ yg=range(-1.5,1.5,length=200)
 
 bsn=basin_discrete_map(xg, yg, integ)
 ```
-
-### 1.4 Notes about the method
-
-The algorithm search for the attractors on the grid and then identify the "color" of the
-initial condition with two basic methods:
-a) The trajectory hits an attractor: case solved
-b) The trajectory hits several already colored boxes with the same color in a row: we color our box with the same color.
-
-This method is at worst as fast as tracking the attractors. In the best cases there is a signicative improvement.
-
-In case there is a need for computing the grid with more precision we leave a method that compute the basin with more precision. However, the attractors must be known already:
-
-```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-bsn=basin_stroboscopic_map(range(-2,2,length=50), range(-2,2,length=50), integ; T=2π/ω, idxs=1:2)
-prec_basin = compute_basin_precise(bsn, integ_df);
-```
-
-
-## 2 - Custom differential equations and low level functions.
+### 1-4 - Custom differential equations and low level functions.
 
 Supose we want to define a custom ODE and compute the basin of attraction on a defined
 Poincaré map:
@@ -182,7 +159,30 @@ The following anonymous functions are important:
 initial conditions on the map must be set.
 
 
-## 3 - Compute the Basin Entropy
+### 1.5 Notes about the method
+
+The algorithm search for the attractors on the grid and then identify the "color" of the
+initial condition with two basic methods:
+a) The trajectory hits an attractor: case solved
+b) The trajectory hits several already colored boxes with the same color in a row: we color our box with the same color.
+
+This method is at worst as fast as tracking the attractors. In the best cases there is a signicative improvement.
+
+In case there is a need for computing the grid with more precision we leave a method that compute the basin with more precision. However, the attractors must be known already:
+
+```jl
+using DynamicalSystems
+using Basins
+ω=0.5
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+bsn=basin_stroboscopic_map(range(-2,2,length=50), range(-2,2,length=50), integ; T=2π/ω, idxs=1:2)
+prec_basin = compute_basin_precise(bsn, integ_df);
+```
+
+
+
+## 2 - Compute the Basin Entropy
 
 The [Basin Entropy](https://doi.org/10.1007/978-3-319-68109-2_2) is a measure of the impredictability of the basin of attraction of a dynamical system. An important feature of the basins of attraction is that for a value above log(2) we can say that the basin is fractalized.
 
@@ -207,13 +207,12 @@ The arguments of `basin_entropy` are:
 * `eps_x`, `eps_y` : size of the window that samples the basin to compute the entropy.
 
 
-## 4 - Compute the uncertainty exponent of a basin of attraction
+## 3 - Compute the uncertainty exponent of a basin of attraction
 
 The [uncertainty exponent](https://en.wikipedia.org/wiki/Uncertainty_exponent) is conected to the [box-counting dimension](https://en.wikipedia.org/wiki/Box-counting_dimension). For a given resolution of the original basin, a sampling of the basin is done until the the fraction of uncertain boxes converges. The process is repeated for different box sizes and then the exponent is estimated.
 
 
 ### Usage
-
 
 ```jl
 using DynamicalSystems
@@ -232,11 +231,9 @@ ue = 2-bd
 ```
 
 
+## 4 - Detection of the property of Wada
 
-
-## 5 - Detection of the property of Wada
-
-### 5.1 - Merge Method
+### 4.1 - Merge Method
 
 The [Wada property](https://en.wikipedia.org/wiki/Lakes_of_Wada) in basins of attraction is an amazing feature of some basins. It is not trivial at all to demonstrate rigurously this property. There are however computational approaches that gives hints about the presence of this property in a basin of attraction. One of the fastest approach is the [Merging Method](https://doi.org/10.1038/s41598-018-28119-0). The algorithm gives the maximum and minimum Haussdorff distances between merged basins. A good rule of thumb to discard the Wada property is to check if the maximum distance is large in comparison to the resolution of the basin, i.e., if the number of pixel is large.
 
@@ -262,7 +259,7 @@ epsilon = xg[2]-xg[1]
 @show dmin = min_dist/epsilon
 ```
 
-### 5.2 - Grid Method
+### 4.2 - Grid Method
 
 Another method available and much more accurate is the [Grid Method](https://doi.org/10.1038/srep16579). It divides the grid and scrutinize the boundary to test if all the attractors are present in every point of the boundary. It may be very long to get an answer since the number of points to test duplicates at each step. The algorithm returns a vector with the proportion of boxes with 1 to N attractor. For example if the vector W[N] is above 0.95 we have all the initial boxes in the boundary on the grid with N attractors. It is therefore a strong evidence that we have a Wada boundary.  
 
@@ -286,7 +283,7 @@ The algorithm returns:
 * `W` contains a vector with the proportion of boxes in the boundary of `k` attractor. A good criterion to decide if the boundary is Wada is to look at `W[N]` with N the number of attractors. If this number is above 0.95 we can conclude that the boundary is Wada.  
 
 
-## 6 - Computation of the saddle embedded in the boundary [EXPERIMENTAL FEATURE]
+## 5 - Computation of the saddle embedded in the boundary [EXPERIMENTAL FEATURE]
 
 There is an invariant subset of the boundary which is invariant under the forward iteration of the dynamical system. This set is called the chaotic set, chaotic saddle or simply saddle set. It is possible to compute an approximation arbitrarily close to the saddle with the saddle straddle method. For a detailed description of the method see [1]. This method requires two `generalized basins` such that the algorithm focus on the boundary between these two sets. We divide the basins in two class such that  `bas_A ∪ bas_B = [1:N]` and `bas_A ∩ bas_B = ∅` with `N` the number of attractors.
 
@@ -319,7 +316,7 @@ Keyword arguments are:
 * `N` : number of points of the saddle to compute
 
 
-## 7 - Computation of the Basin Stability
+## 6 - Computation of the Basin Stability
 
 The Basin Stability [6] measures the relative sizes of the basin. Larger basin are considered more stable since a small perturbation or error in the initial conditions is less likely to change the attractor.
 
@@ -338,7 +335,7 @@ bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 @show basin_stability(bsn.basin)
 ```
 
-## 8 - More examples
+## 7 - More examples
 
 You can find more examples in `src/examples`
 
