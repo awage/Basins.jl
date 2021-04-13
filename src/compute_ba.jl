@@ -40,7 +40,7 @@ function get_box(u, bsn_nfo::basin_info)
 end
 
 
-function procedure!(bsn_nfo::basin_info, n,m)
+function procedure!(bsn_nfo::basin_info, n, m, u)
     max_check = 60
     next_c = bsn_nfo.basin[n,m]
     bsn_nfo.step += 1
@@ -85,6 +85,7 @@ function procedure!(bsn_nfo::basin_info, n,m)
             ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
             bsn_nfo.basin[n,m] = bsn_nfo.current_color
+            push!(bsn_nfo.attractors, [bsn_nfo.current_color/2, u]) # store attractor
             # We continue iterating until we hit again the same attractor. In which case we stop.
             return 0;
         end
@@ -221,7 +222,7 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function; idxs=
             new_u = integ.u[idxs]
             n,m = get_box(new_u, bsn_nfo)
             if n>=0 # apply procedure only for boxes in the defined space
-                next_box = procedure!(bsn_nfo, n, m)
+                next_box = procedure!(bsn_nfo, n, m, new_u)
                 inlimbo = 0
             else
                 # We are outside the box: anything can happen!
@@ -236,14 +237,9 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function; idxs=
          end
     end
 
-    Natt = (maximum(bsn_nfo.basin) - 1)/2
-    for k in 1:Natt
-        ind  = findall(bsn_nfo.basin .== k*2)
-        [push!(bsn_nfo.attractors, [k, xg[p[1]],yg[p[2]]]) for p in ind]
-    end
 
     ind  = findall(iseven.(bsn_nfo.basin) .== true)
-    [ bsn_nfo.basin[k] = bsn_nfo.basin[k]+1 for k in ind ]
+    [bsn_nfo.basin[k] = bsn_nfo.basin[k]+1 for k in ind ]
     bsn_nfo.basin = (bsn_nfo.basin .- 1).//2
 
     return bsn_nfo
@@ -455,4 +451,86 @@ function get_color_point!(bsn_nfo::basin_info, integ, u0)
     end
 
     return done
+end
+
+
+
+# Follow the trajectory until we hit the attractor
+function get_color_precise!(bsn_nfo::basin_info, integ, u0; radius=0.)
+
+    # reinitialize integrator
+    bsn_nfo.reinit_f!(integ, u0)
+    reset_bsn_nfo!(bsn_nfo)
+
+    # set the radius to the grid resolution. This is a conservative distance
+    radius = (radius == 0.) ?  maximum([bsn_nfo.xg[2]-bsn_nfo.xg[1] , bsn_nfo.yg[2]-bsn_nfo.yg[1]]) : radius
+
+    # function for attractor metrics:
+    get_min_dist = (u) -> minimum([norm(u-p[2]) for p in bsn_nfo.attractors])
+
+    it_cnt = 0;
+    done = 0;
+    inlimbo = 0
+
+    while done == 0
+       old_u = integ.u[bsn_nfo.idxs]
+       integ.t = 0
+       bsn_nfo.iter_f!(integ)
+       new_u = integ.u[bsn_nfo.idxs]
+       n,m = get_box(new_u, bsn_nfo)
+
+       if n>=0 # apply procedure only for boxes in the defined space
+           #@show get_min_dist(new_u)
+           if get_min_dist(new_u) < radius
+               # find the attractor:
+               v = [norm(new_u - att[2]) for att in bsn_nfo.attractors]
+               for (k,m) in enumerate(v)
+                   if get_min_dist(new_u) == m
+                       return bsn_nfo.attractors[k][1]
+                   end
+               end
+           end
+           inlimbo = 0
+       else
+           # We are outside the defined grid
+           inlimbo +=1
+       end
+
+       if inlimbo > 60
+           done = check_outside_the_screen(new_u, old_u, inlimbo)
+       end
+
+       it_cnt += 1
+
+       if it_cnt > 5000
+           @warn "Max iteration in get_color_precise! something went wrong, check the location of attractors."
+           break;
+       end
+    end
+
+    return done
+end
+
+
+
+"""
+    compute_basin_precise(bsn_nfo::basin_info, integ)
+Compute the basin of attraction using only the attractors. The attractors must have been found previously in `bsn_nfo.attractors`
+
+## Arguments
+* `integ` : the matrix containing the information of the basin.
+* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
+
+## Keyword arguments:
+* `radius` : this the distance to the attractor in order to identify correctly the initial condition. Default value is the grid size.
+"""
+function compute_basin_precise(bsn_nfo::basin_info, integ; radius=0.)
+    # Experiment: compute the basin when the attractors are known
+    new_bas = zeros(Int16, size(bsn_nfo.basin))
+
+    for (k,x) in enumerate(bsn_nfo.xg), (n,y) in enumerate(bsn_nfo.yg)
+        new_bas[k,n]=get_color_precise!(bsn_nfo, integ,[x,y]; radius=radius)
+    end
+
+    return new_bas
 end

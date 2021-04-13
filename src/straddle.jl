@@ -33,7 +33,6 @@ function bisection_refine!(u_A, u_B, bsn_nfo, integ, basin_A, basin_B, tol)
             u_A_next=u_A_rnd
         end
 
-
         if get_col_next(u_B_next) ∉ basin_B
             # This basin has switch we try to perturb u_B_next until we get back to the initial basin.
             eps=1e-8
@@ -46,7 +45,6 @@ function bisection_refine!(u_A, u_B, bsn_nfo, integ, basin_A, basin_B, tol)
         end
 
         return u_A_next,u_B_next
-
 
     else
         # refinement with midpoint method.
@@ -145,10 +143,10 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_to
     for p in bsn_nfo.attractors
         @show  p
         if p[1] == bas_A[1]
-            u_A = [p[2], p[3]]
+            u_A = p[2]
         end
         if p[1] == bas_B[1]
-            u_B = [p[2], p[3]]
+            u_B = p[2]
         end
     end
 
@@ -204,83 +202,4 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_to
     end
 
     return saddle_series_A, saddle_series_B
-end
-
-
-
-# Follow the trajectory until we hit the attractor
-function get_color_precise!(bsn_nfo::basin_info, integ, u0)
-
-    # reinitialize integrator
-    bsn_nfo.reinit_f!(integ, u0)
-    reset_bsn_nfo!(bsn_nfo)
-    radius = maximum([bsn_nfo.xg[2]-bsn_nfo.xg[1] , bsn_nfo.yg[2]-bsn_nfo.yg[1]])
-
-    # function for attractor metrics:
-    get_min_dist = (u) -> minimum([norm(u-[p[2],p[3]]) for p in bsn_nfo.attractors])
-    it_cnt = 0;
-    done = 0;
-    inlimbo = 0
-
-    while done == 0
-       old_u = integ.u[bsn_nfo.idxs]
-       integ.t = 0
-       bsn_nfo.iter_f!(integ)
-       new_u = integ.u[bsn_nfo.idxs]
-       n,m = get_box(new_u, bsn_nfo)
-
-       if n>=0 # apply procedure only for boxes in the defined space
-         #  @show get_min_dist(new_u)
-           if get_min_dist(new_u) < radius
-               # find the attractor:
-               v = [norm(new_u-[p[2],p[3]]) for p in bsn_nfo.attractors]
-               for (k,m) in enumerate(v)
-                   if get_min_dist(new_u) == m
-                       return bsn_nfo.attractors[k][1]
-                   end
-               end
-           end
-           inlimbo = 0
-       else
-           # We are outside the defined grid
-           inlimbo +=1
-       end
-
-       if inlimbo > 60
-           done = check_outside_the_screen(new_u, old_u, inlimbo)
-       end
-
-       it_cnt += 1
-
-       if it_cnt > 5000
-           @warn "Max iteration in get_color_precise! something went wrong, check the location of attractors."
-           break;
-       end
-    end
-
-    return done
-end
-
-
-
-"""
-    compute_basin_precise(bsn_nfo::basin_info, integ)
-Compute the basin of attraction using only the attractors. The attractors must have been found previously in `bsn_nfo.attractors`
-
-## Arguments
-* `integ` : the matrix containing the information of the basin.
-* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
-
-"""
-function compute_basin_precise(bsn_nfo::basin_info, integ)
-    # Experiment: compute the basin when the attractors are known
-
-
-new_bas = zeros(Int16, size(bsn_nfo.basin))
-
-for (k,x) in enumerate(bsn_nfo.xg), (n,y) in enumerate(bsn_nfo.yg)
-    new_bas[k,n]=get_color_precise!(bsn_nfo,integ,[x,y])
-end
-
-return new_bas
 end

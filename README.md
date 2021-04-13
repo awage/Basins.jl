@@ -21,9 +21,9 @@ The technique used to compute the basin of attraction is described in ref. [1]. 
 
 The algorithm gives back a matrix with the attractor numbered from 1 to N. If an attractor exists outside the defined grid of if the trajectory escapes, this initial condition is labelled -1. It may happens for example if there is a fixed point not on the Poincaré map.
 
-### Usage
+### 1.1 Stroboscopic Maps
 
-First define a dynamical system on the plane, for example with a stroboscopic map or Poincaré section. For example we can set up an dynamical system with a stroboscopic map defined:
+First define a dynamical system on the plane, for example with a *stroboscopic* map or Poincaré section. For example we can set up an dynamical system with a stroboscopic map defined:
 
 ```jl
 using DynamicalSystems
@@ -61,13 +61,15 @@ plot(xg,yg,bsn.basin', seriestype=:heatmap)
 
 ![image](https://i.imgur.com/EBWw1GK.png)
 
+### 1.2 Poincaré Maps
+
 Another example with a Poincaré map:
 ```jl
 # Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model
 # Chaos 18, 033121 (2008); https://doi.org/10.1063/1.2953589
 @inline @inbounds function lorenz84(u, p, t)
-    F = p[1]; G = p[2]; a = p[3]; b = p[4];
-	  x = u[1]; y = u[2]; z = u[3];
+    F = p[1]; G = p[2]; a = p[3]; b = p[4]
+	  x = u[1]; y = u[2]; z = u[3]
     dx = -y^2 -z^2 -a*x + a*F
     dy = x*y - y - b*x*z +G
 	  dz = b*x*y + x*z -z
@@ -93,6 +95,57 @@ The keyword arguments are:
   a vector of length `D+1`. The first `D` elements of the
   vector correspond to ``\\mathbf{a}`` while the last element is ``b``.
 * `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
+
+### 1.3 Discrete Maps
+
+The process to compute the basin of a discrete map is very similar:
+
+```jl
+function newton_map(dz,z, p, n)
+    f(x) = x^p[1]-1
+    df(x)= p[1]*x^(p[1]-1)
+    z1 = z[1] + im*z[2]
+    dz1 = f(z1)/df(z1)
+    z1 = z1 - dz1
+    dz[1]=real(z1)
+    dz[2]=imag(z1)
+    return
+end
+
+# dummy Jacobian function to keep the initializator happy
+function newton_map_J(J,z0, p, n)
+   return
+end
+
+ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [3] , newton_map_J)
+integ  = integrator(ds)
+
+xg=range(-1.5,1.5,length=200)
+yg=range(-1.5,1.5,length=200)
+
+bsn=basin_discrete_map(xg, yg, integ)
+```
+
+### 1.4 Notes about the method
+
+The algorithm search for the attractors on the grid and then identify the "color" of the
+initial condition with two basic methods:
+a) The trajectory hits an attractor: case solved
+b) The trajectory hits several already colored boxes with the same color in a row: we color our box with the same color.
+
+This method is at worst as fast as tracking the attractors. In the best cases there is a signicative improvement.
+
+In case there is a need for computing the grid with more precision we leave a method that compute the basin with more precision. However, the attractors must be known already:
+
+```jl
+using DynamicalSystems
+using Basins
+ω=0.5
+ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+bsn=basin_stroboscopic_map(range(-2,2,length=50), range(-2,2,length=50), integ; T=2π/ω, idxs=1:2)
+prec_basin = compute_basin_precise(bsn, integ_df);
+```
 
 
 ## 2 - Custom differential equations and low level functions.
