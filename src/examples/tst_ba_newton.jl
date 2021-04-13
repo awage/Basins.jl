@@ -1,7 +1,6 @@
 using Revise
 using Plots
 using Basins
-using DifferentialEquations
 using DynamicalSystems
 
 
@@ -21,11 +20,18 @@ end
 function newton_map_J(J,z0, p, n)
    return
 end
-ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [6] , newton_map_J)
+ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [3] , newton_map_J)
 integ  = integrator(ds)
 
 xg=range(-1.5,1.5,length=200)
 yg=range(-1.5,1.5,length=200)
 
-@time basin=basin_discrete_map(xg, yg, integ)
-plot(xg,yg,basin',seriestype=:heatmap)
+@time bsn=basin_discrete_map(xg, yg, integ)
+
+
+
+sa,sb = compute_saddle(integ, bsn, [1], [2,3]; N=100)
+
+plot(xg,yg,bsn.basin',seriestype=:heatmap)
+s=Dataset(sa)
+plot!(s[:,1],s[:,2],seriestype=:scatter)

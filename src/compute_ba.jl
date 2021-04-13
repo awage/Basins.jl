@@ -1,11 +1,12 @@
 
 
-mutable struct basin_info{I,F,V}
+mutable struct basin_info{I,F,V,S}
     basin :: I
     xg :: F
     yg :: F
     iter_f! :: Function
     reinit_f! :: Function
+    idxs :: S
     current_color :: Int64
     next_avail_color :: Int64
     consecutive_match :: Int64
@@ -159,7 +160,6 @@ function check_outside_the_screen(new_u, old_u, inlimbo)
 end
 
 
-
 function reset_bsn_nfo!(bsn_nfo::basin_info)
     #@show bsn_nfo.step
     bsn_nfo.consecutive_match = 0
@@ -183,12 +183,12 @@ for higher level functions see: `basin_poincare_map`, `basin_discrete_map`, `bas
 examples for a Poincaré map of a continuous system.
 * `reinit_f!` : function that sets the initial condition to test.
 """
-function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
+function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function; idxs=1:2)
 
 
     complete = 0;
 
-    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, 2,4,0,0,0,1,1,0,0,[])
+    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, idxs, 2,4,0,0,0,1,1,0,0,[])
 
     reset_bsn_nfo!(bsn_nfo)
 
@@ -216,9 +216,9 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
          inlimbo = 0
 
          while next_box == 0
-            old_u = integ.u
+            old_u = integ.u[idxs]
             iter_f!(integ) # perform a step
-            new_u = integ.u
+            new_u = integ.u[idxs]
             n,m = get_box(new_u, bsn_nfo)
             if n>=0 # apply procedure only for boxes in the defined space
                 next_box = procedure!(bsn_nfo, n, m)
@@ -248,7 +248,6 @@ function draw_basin(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
 
     return bsn_nfo
 end
-
 
 
 """
@@ -292,7 +291,9 @@ function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.,
     # Carefully set the initial conditions on the defined plane and
     reinit_f! = (integ,y) -> _initf(integ, y, idxs, plane)
 
-    basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+    basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!; idxs=i)
+
+
 end
 
 function _initf(integ, y, idxs, plane)
@@ -360,10 +361,12 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
 """
 function basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2)
 
-    iter_f! = (integ) -> step!(integ, T, true)
-    reinit_f! =  (integ,y) -> _init(integ, y, idxs)
+    i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
 
-    return draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+    iter_f! = (integ) -> step!(integ, T, true)
+    reinit_f! =  (integ,y) -> _init(integ, y, i)
+
+    return draw_basin(xg, yg, integ, iter_f!, reinit_f!; idxs=i)
 end
 
 function _init(integ, y, idxs)
@@ -388,8 +391,9 @@ function basin_discrete_map(xg, yg, integ; idxs=1:2)
 
     iter_f! = (integ) -> step!(integ)
     reinit_f! =  (integ,y) -> _init(integ, y, idxs)
+    i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
 
-    return draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+    return draw_basin(xg, yg, integ, iter_f!, reinit_f!; idxs=i)
 end
 
 
@@ -430,9 +434,9 @@ function get_color_point!(bsn_nfo::basin_info, integ, u0)
     inlimbo = 0
 
     while done == 0
-       old_u = integ.u
+       old_u = integ.u[bsn_nfo.idxs]
        bsn_nfo.iter_f!(integ)
-       new_u = integ.u
+       new_u = integ.u[bsn_nfo.idxs]
 
        n,m = get_box(new_u, bsn_nfo)
 

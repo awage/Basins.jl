@@ -106,14 +106,14 @@ end
 
 
 
-mutable struct ode_info{I}
+mutable struct ds_info{I}
     bsn_nfo::basin_info # basin info for BA routine
     integ::I               # integrator
 end
 
 
-function reset_point_data!(ode_nfo)
-    reset_bsn_nfo!(ode_nfo.bsn_nfo)
+function reset_point_data!(ds_nfo)
+    reset_bsn_nfo!(ds_nfo.bsn_nfo)
 end
 
 
@@ -133,7 +133,7 @@ The algorithm test for Wada basin in a dynamical system. It uses the dynamical s
 """
 function detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
 
-   ode_nfo = ode_info(bsn_nfo, integ)
+   ds_nfo = ds_info(bsn_nfo, integ)
    num_att = length(unique(bsn_nfo.basin))
 
    # helper function to obtain coordinates
@@ -167,7 +167,7 @@ function detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
            pc1 = index_to_coord(p1_ind[k])
            pc2 = index_to_coord(p2_ind[k])
            # update number of colors
-           clr_mat[k]=divide_and_test_W(ode_nfo, pc1, pc2, n, clr_mat[k], num_att)
+           clr_mat[k]=divide_and_test_W(ds_nfo, pc1, pc2, n, clr_mat[k], num_att)
            # update W matrix
            W[length(clr_mat[k]),n] += 1
        end
@@ -208,7 +208,7 @@ end
 
 
 
-function divide_and_test_W(ode_nfo, p1, p2, nstep, clrs, Na)
+function divide_and_test_W(ds_nfo, p1, p2, nstep, clrs, Na)
 
     if length(clrs)  == Na
         return clrs
@@ -225,7 +225,7 @@ function divide_and_test_W(ode_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = get_color_point!(ode_nfo.bsn_nfo, ode_nfo.integ, pnt)
+        clr = get_color_point!(ds_nfo.bsn_nfo, ds_nfo.integ, pnt)
         push!(clrs, clr)
         if length(clrs)  == Na
             break

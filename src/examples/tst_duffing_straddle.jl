@@ -4,29 +4,28 @@ using Plots
 using DynamicalSystems
 using DifferentialEquations
 
-@inline @inbounds function duffing(u, p, t)
-    d = p[1]; F = p[2]; omega = p[3]
-    du1 = u[2]
-    du2 = -d*u[2] + u[1] - u[1]^3 + F*sin(omega*t)
-    return SVector{2}(du1, du2)
-end
 
 
-# Riddled basin, problematic
-ω=0.1617
-F = 0.395
-ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
+ω=1.
+F = 0.2
+ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-xg = range(-2.2,2.2,length=100)
-yg = range(-2.2,2.2,length=100)
-
+xg = range(-2.2,2.2,length=250)
+yg = range(-2.2,2.2,length=250)
 
 @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 
+sa,sb = compute_saddle(integ_df, bsn, [1], [2]; N=1000)
 
+# plot(xg,yg,bsn.basin', seriestype=:heatmap)
+# s = Dataset(sa)
+# plot!(s[:,1],s[:,2],seriestype=:scatter)
 
-sa,sb = compute_saddle(integ_df, bsn, [1], [2],100)
-
+# io = open("myfile.txt", "w");
+# for v in s
+#     write(io, string(v[1], " ", v[2], "; \n"));
+# end
+# close(io);
 
 
 
@@ -74,7 +73,7 @@ yg = range(-2.,4.,length=yres)
 
 Na = length(unique(bsn.basin))
 
-sa,sb = compute_saddle(integ_df, bsn, [1], [2,3],10000)
+sa,sb = compute_saddle(integ_df, bsn, [1], [2,3]; N=10000)
 
 plot(xg,yg,bsn.basin', seriestype=:heatmap)
 s = Dataset(sa)

@@ -233,7 +233,7 @@ The algorithm returns:
 * `W` contains a vector with the proportion of boxes in the boundary of `k` attractor. A good criterion to decide if the boundary is Wada is to look at `W[N]` with N the number of attractors. If this number is above 0.95 we can conclude that the boundary is Wada.  
 
 
-## 6 - Computation of the saddle embedded in the boundary
+## 6 - Computation of the saddle embedded in the boundary [EXPERIMENTAL FEATURE]
 
 There is an invariant subset of the boundary which is invariant under the forward iteration of the dynamical system. This set is called the chaotic set, chaotic saddle or simply saddle set. It is possible to compute an approximation arbitrarily close to the saddle with the saddle straddle method. For a detailed description of the method see [1]. This method requires two `generalized basins` such that the algorithm focus on the boundary between these two sets. We divide the basins in two class such that  `bas_A ∪ bas_B = [1:N]` and `bas_A ∩ bas_B = ∅` with `N` the number of attractors.
 
@@ -250,8 +250,9 @@ xg=range(-2.5,2.5,length=100)
 yg=range(-2.5,2.5,length=100)
 bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 
+# sa is the left set and sb is the right set.
 sa,sb = compute_saddle(integ, bsn, [1], [2,3], 1000)
-
+s = Dataset(sa) # convert to a dataset for ploting
 ```
 
 

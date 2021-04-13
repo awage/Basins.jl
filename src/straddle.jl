@@ -8,7 +8,7 @@ function bisection_refine!(u_A, u_B, bsn_nfo, integ, basin_A, basin_B, tol)
     function get_col_next(u0)
         bsn_nfo.reinit_f!(integ,u0)
         bsn_nfo.iter_f!(integ)
-        return get_col(integ.u)
+        return get_col(integ.u[bsn_nfo.idxs])
     end
 
     # directing vector
@@ -112,6 +112,7 @@ algorithm. It is necessary to define two `generalized basin`, that is we must se
 
 ## Keyword arguments
 * `N` : number of points of the saddle to compute
+* `init_tol`: length of the straddle segment
 
 ## Example
 ```
@@ -121,12 +122,22 @@ sa,sb = compute_saddle(bsn, integ_df, [1], [2,3],1000)
 ```
 
 """
-function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100)
+function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_tol = 1e-6)
+
+    Na = length(unique(bsn_nfo.basin))
+    # basic check
+    if (Set(bas_A) ∪ Set(bas_B)) != Set(collect(1:Na))
+        @error "Generalized basins are not well defined"
+        return nothing,nothing
+    end
+
+    if length(Set(bas_A) ∩ Set(bas_B)) > 0
+        @error "Generalized basins are not well defined"
+        return nothing, nothing
+    end
 
 
-    x0=0.
-    tol = init_tol = 1e-6
-
+    tol = init_tol
     xg = bsn_nfo.xg; yg = bsn_nfo.yg; # aliases
 
     # Set initial condition near attractors of the selected basins.
@@ -147,7 +158,6 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100)
     u_A_it = u_B_it = [0.,0.]
     Ttr= 20 # skip 20 points
     switch_bas = 0 # keep track of switching between basin if it happens too much the basin is problematic
-
     k=1;
     while k<= N
 
@@ -157,12 +167,12 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100)
         dist = norm(u_A_r-u_B_r)
         bsn_nfo.reinit_f!(integ,u_A_r)
         bsn_nfo.iter_f!(integ)
-        u_A_it = deepcopy(get_state(integ)) # for some reason I have to deepcopy this vector
+        u_A_it = deepcopy(integ.u[bsn_nfo.idxs]) # for some reason I have to deepcopy this vector
         ca=get_color_precise!(bsn_nfo,integ,u_A_it)
 
         bsn_nfo.reinit_f!(integ,u_B_r)
         bsn_nfo.iter_f!(integ)
-        u_B_it = deepcopy(get_state(integ))
+        u_B_it = deepcopy(integ.u[bsn_nfo.idxs])
         cb=get_color_precise!(bsn_nfo,integ,u_B_it)
 
 
@@ -183,6 +193,7 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100)
             end
             u_A=u_A_it;
             u_B=u_B_it;
+            #@show u_A,u_B
             tol = init_tol
         end
 
@@ -200,27 +211,26 @@ end
 # Follow the trajectory until we hit the attractor
 function get_color_precise!(bsn_nfo::basin_info, integ, u0)
 
-
     # reinitialize integrator
     bsn_nfo.reinit_f!(integ, u0)
     reset_bsn_nfo!(bsn_nfo)
-    radius = maximum([bsn_nfo.xg[2]-bsn_nfo.xg[1] , bsn_nfo.yg[2]-bsn_nfo.yg[1]])/2
+    radius = maximum([bsn_nfo.xg[2]-bsn_nfo.xg[1] , bsn_nfo.yg[2]-bsn_nfo.yg[1]])
 
     # function for attractor metrics:
     get_min_dist = (u) -> minimum([norm(u-[p[2],p[3]]) for p in bsn_nfo.attractors])
-
+    it_cnt = 0;
     done = 0;
     inlimbo = 0
 
     while done == 0
-       old_u = integ.u
+       old_u = integ.u[bsn_nfo.idxs]
        integ.t = 0
        bsn_nfo.iter_f!(integ)
-       new_u = integ.u
-
+       new_u = integ.u[bsn_nfo.idxs]
        n,m = get_box(new_u, bsn_nfo)
 
        if n>=0 # apply procedure only for boxes in the defined space
+         #  @show get_min_dist(new_u)
            if get_min_dist(new_u) < radius
                # find the attractor:
                v = [norm(new_u-[p[2],p[3]]) for p in bsn_nfo.attractors]
@@ -229,7 +239,6 @@ function get_color_precise!(bsn_nfo::basin_info, integ, u0)
                        return bsn_nfo.attractors[k][1]
                    end
                end
-
            end
            inlimbo = 0
        else
@@ -241,6 +250,12 @@ function get_color_precise!(bsn_nfo::basin_info, integ, u0)
            done = check_outside_the_screen(new_u, old_u, inlimbo)
        end
 
+       it_cnt += 1
+
+       if it_cnt > 5000
+           @warn "Max iteration in get_color_precise! something went wrong, check the location of attractors."
+           break;
+       end
     end
 
     return done

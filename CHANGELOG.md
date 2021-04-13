@@ -1,3 +1,8 @@
+# 0.3.0
+* Solve problem with the computation of basins (integ.u[idxs])
+* added feature: straddle saddle of basins (still experimental)
+* added test environment and dependencies
+
 # 0.2.0
 * Changed some methods parameters. Fix tests. Improved docs
 
