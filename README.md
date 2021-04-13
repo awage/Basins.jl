@@ -91,7 +91,7 @@ The keyword arguments are:
 * `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
 
 
-![image](https://imgur.com/hKcOiwTl.png)
+![image](https://i.imgur.com/hKcOiwTl.png)
 
 
 ### 1.3 - Discrete Maps
@@ -124,7 +124,7 @@ yg=range(-1.5,1.5,length=200)
 bsn=basin_discrete_map(xg, yg, integ)
 ```
 
-![image](https://imgur.com/ppHlGPbl.png)
+![image](https://i.imgur.com/ppHlGPbl.png)
 
 
 ### 1.4 - Custom differential equations and low level functions.
@@ -318,7 +318,7 @@ Keyword arguments are:
 * `N` : number of points of the saddle to compute
 
 
-![image](https://imgur.com/pQLDO0Ol.png)
+![image](https://i.imgur.com/pQLDO0Ol.png)
 
 
 ## 6 - Computation of the Basin Stability
