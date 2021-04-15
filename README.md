@@ -27,18 +27,17 @@ The algorithm gives back a matrix with the attractor numbered from 1 to N. If an
 First define a dynamical system on the plane, for example with a *stroboscopic* map or Poincaré section. For example we can set up an dynamical system with a stroboscopic map defined:
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
+using Basins, DynamicalSystems, DifferentialEquations
+ω=1.; F = 0.2
+ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+integ  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 ```
 
 Now we define the grid of ICs that we want to analyze and launch the procedure:
 
 ```jl
-xg=range(-2,2,length=200)
-yg=range(-2,2,length=200)
+xg = range(-2.2,2.2,length=200)
+yg = range(-2.2,2.2,length=200)
 bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
 ```
 
@@ -60,7 +59,7 @@ plot(xg,yg,bsn.basin', seriestype=:heatmap)
 
 ```
 
-![image](https://i.imgur.com/EBWw1GK.png)
+![image](https://i.imgur.com/R2veb5tl.png)
 
 ### 1.2 - Poincaré Maps
 
@@ -79,7 +78,7 @@ Once the integrator has been set, the Poincaré map can defined on a plane:
 ```jl
 xg=range(-6.,6.,length=200)
 yg=range(-6.,6.,length=200)
-@time bsn = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
+bsn = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
 plot(xg,yg,bsn.basin',seriestype=:heatmap)
 ```
 
@@ -173,12 +172,13 @@ This method is at worst as fast as tracking the attractors. In the best cases th
 In case there is a need for computing the grid with more precision we leave a method that compute the basin with more precision. However, the attractors must be known already:
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-bsn=basin_stroboscopic_map(range(-2,2,length=50), range(-2,2,length=50), integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+ω=1.; F = 0.2
+ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
+bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+
 prec_basin = compute_basin_precise(bsn, integ_df);
 ```
 
@@ -193,14 +193,12 @@ The [Basin Entropy](https://doi.org/10.1007/978-3-319-68109-2_2) is a measure of
 Once the basin of attraction has been computed, the computing the Basin Entropy is easy:
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+ω=1.; F = 0.2
+ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
+bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 
 Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
 ```
@@ -217,14 +215,12 @@ The [uncertainty exponent](https://en.wikipedia.org/wiki/Uncertainty_exponent) i
 ### Usage
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+ω=1.; F = 0.2
+ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
+bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 
 bd = box_counting_dim(xg, yg, bsn.basin)
 
@@ -244,14 +240,30 @@ Notice that the algorithm gives an answer for a particular choice of the grid. I
 ### Usage
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+
+# Equations of motion:
+function forced_pendulum!(du, u, p, t)
+    d = p[1]; F = p[2]; omega = p[3]
+    du[1] = u[2]
+    du[2] = -d*u[2] - sin(u[1])+ F*cos(omega*t)
+end
+
+# We have to define a callback to wrap the phase in [-π,π]
+function affect!(integrator)
+    if integrator.u[1] < 0
+        integrator.u[1] += 2*π
+    else
+        integrator.u[1] -= 2*π
+    end
+end
+
+condition(u,t,integrator) = (integrator.u[1] < -π  || integrator.u[1] > π)
+cb = DiscreteCallback(condition,affect!)
+F = 1.66; ω = 1.; d=0.2
+df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
+integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
+bsn = basin_stroboscopic_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
 
 max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn.basin)
 # grid resolution
@@ -269,14 +281,30 @@ Another method available and much more accurate is the [Grid Method](https://doi
 ### Usage
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-2.5,2.5,length=100)
-yg=range(-2.5,2.5,length=100)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+
+# Equations of motion:
+function forced_pendulum!(du, u, p, t)
+    d = p[1]; F = p[2]; omega = p[3]
+    du[1] = u[2]
+    du[2] = -d*u[2] - sin(u[1])+ F*cos(omega*t)
+end
+
+# We have to define a callback to wrap the phase in [-π,π]
+function affect!(integrator)
+    if integrator.u[1] < 0
+        integrator.u[1] += 2*π
+    else
+        integrator.u[1] -= 2*π
+    end
+end
+
+condition(u,t,integrator) = (integrator.u[1] < -π  || integrator.u[1] > π)
+cb = DiscreteCallback(condition,affect!)
+F = 1.66; ω = 1.; d=0.2
+df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
+integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
+bsn = basin_stroboscopic_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
 
 @show W = detect_wada_grid_method(integ, bsn; max_iter=10)
 ```
@@ -293,18 +321,36 @@ There is an invariant subset of the boundary which is invariant under the forwar
 
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-2.5,2.5,length=100)
-yg=range(-2.5,2.5,length=100)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+
+# Equations of motion:
+function forced_pendulum!(du, u, p, t)
+    d = p[1]; F = p[2]; omega = p[3]
+    du[1] = u[2]
+    du[2] = -d*u[2] - sin(u[1])+ F*cos(omega*t)
+end
+
+# We have to define a callback to wrap the phase in [-π,π]
+function affect!(integrator)
+    if integrator.u[1] < 0
+        integrator.u[1] += 2*π
+    else
+        integrator.u[1] -= 2*π
+    end
+end
+
+condition(u,t,integrator) = (integrator.u[1] < -π  || integrator.u[1] > π)
+cb = DiscreteCallback(condition,affect!)
+F = 1.66; ω = 1.; d=0.2
+df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
+integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
+bsn = basin_stroboscopic_map(range(-pi,pi,length=200), range(-2.,4.,length=200), integ; T=2*pi/ω)
 
 # sa is the left set and sb is the right set.
 sa,sb = compute_saddle(integ, bsn, [1], [2,3], 1000)
 s = Dataset(sa) # convert to a dataset for ploting
+plot(xg,yg,bsn.basin', seriestype=:heatmap)
+plot!(s[:,1],s[:,2],seriestype=:scatter, markercolor=:blue)
 ```
 
 
@@ -328,14 +374,12 @@ The Basin Stability [6] measures the relative sizes of the basin. Larger basin a
 ### Usage
 
 ```jl
-using DynamicalSystems
-using Basins
-ω=0.5
-ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=3)
-integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-xg=range(-4,4,length=200)
-yg=range(-4,4,length=200)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+using Basins, DynamicalSystems, DifferentialEquations
+ω=1.; F = 0.2
+ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
+bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 
 @show basin_stability(bsn.basin)
 ```

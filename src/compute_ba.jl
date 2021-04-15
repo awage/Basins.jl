@@ -39,7 +39,10 @@ function get_box(u, bsn_nfo::basin_info)
     return n,m
 end
 
-
+## Procedure described in  H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
+# The idea is to color the grid with the current color. When an attractor box is hit (even color), the initial condition is colored
+# with the color of its basin (odd color). If the trajectory hits another basin 10 times in row the IC is colored with the same
+# color as this basin. 
 function procedure!(bsn_nfo::basin_info, n, m, u)
     max_check = 60
     next_c = bsn_nfo.basin[n,m]
@@ -281,8 +284,7 @@ function basin_poincare_map(xg, yg, integ; plane=(3,0.), Tmax = 20.,
     f = (t) -> planecrossing(integ(t))
 
     # set the iterator function with the low level function for the Poincaré Map
-    iter_f! = (integ) -> poincaremap!(integ, f, planecrossing, Tmax, i, rootkw)
-    #iter_f! = (integ) -> DynamicalSystems.ChaosTools.poincaremap!(integ, f, planecrossing, Tmax, i, rootkw)
+    iter_f! = (integ) -> DynamicalSystems.ChaosTools.poincaremap!(integ, f, planecrossing, integ.t+Tmax, i, rootkw)
 
     # Carefully set the initial conditions on the defined plane and
     reinit_f! = (integ,y) -> _initf(integ, y, idxs, plane)
@@ -299,44 +301,6 @@ function _initf(integ, y, idxs, plane)
     u[j] = v
     # all other coordinates are zero
     reinit!(integ, u)
-end
-
-
-"""
-	poincaremap!(integ, f, planecrossing, Tmax, idxs, rootkw)
-Low level function that actual performs the algorithm of finding the next crossing
-of the Poincaré surface of section.
-"""
-function poincaremap!(integ, f, planecrossing, Tmax, idxs, rootkw)
-	ti = integ.t
-
-    # Check if initial condition is already on the plane
-    side = planecrossing(integ.u)
-    if side == 0
-		dat = integ.u[idxs]
-        step!(integ)
-		return dat
-    end
-
-    while side < 0
-        (integ.t - ti) > Tmax && break
-        step!(integ)
-        side = planecrossing(integ.u)
-    end
-    while side ≥ 0
-        (integ.t - ti) > Tmax && break
-        step!(integ)
-        side = planecrossing(integ.u)
-    end
- 	(integ.t -ti) > Tmax && return nothing
-    if (integ.t -ti) > Tmax
-        println("time out")
-    end
-
-    # I am now guaranteed to have `t` in negative and `tprev` in positive
-    tcross = Roots.find_zero(f, (integ.tprev, integ.t), Roots.A42(); rootkw...)
-    ucross = integ(tcross)
-    return ucross[idxs]
 end
 
 
