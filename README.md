@@ -78,16 +78,15 @@ Once the integrator has been set, the Poincaré map can defined on a plane:
 ```jl
 xg=range(-6.,6.,length=200)
 yg=range(-6.,6.,length=200)
-bsn = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2)
+pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
+
+@time bsn = basin_poincare_map(xg, yg, pmap)
+
 plot(xg,yg,bsn.basin',seriestype=:heatmap)
 ```
 
-The keyword arguments are:
-* `plane` : A `Tuple{Int, <: Number}`, like `(j, r)` : the plane is defined
-  as when the `j` variable of the system equals the value `r`. It can also be
-  a vector of length `D+1`. The first `D` elements of the
-  vector correspond to ``\\mathbf{a}`` while the last element is ``b``.
-* `idxs`: the indices of the variable to track on the plane. By default the initial conditions of other variables are set to zero.
+The arguments are:
+* `pmap` : A poincaré map as defined in [ChaosTools.jl](https://github.com/JuliaDynamics/ChaosTools.jl)
 
 
 ![image](https://i.imgur.com/hKcOiwTl.png)
@@ -150,41 +149,62 @@ yg = range(-2.2,2.2,length=200)
 
 iter_f! = (integ) -> step!(integ, 2π/ω, true)
 reinit_f! =  (integ,y) ->  reinit!(integ, [y...])
+get_u = (integ) -> integ.u[1:2]
 
-bsn = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+bsn = draw_basin(xg, yg, integ, iter_f!, reinit_f!, get_u)
 ```
 
 The following anonymous functions are important:
 * iter_f! : defines a function that iterates the system one step on the map.
 * reinit_f! : sets the initial conditions on the map. Remember that only the
 initial conditions on the map must be set.
+* get_u : it is a custom function to get the state of the integrator only for the variables
+defined on the plane
 
+### 1.6 Basins in Higher Dimensions
+
+When you cannot define a Stroboscopic map or a well defined Poincaré map you can always try
+the general method for higher dimensions. It is slower and may requires some tuning. The algorithm
+looks for atractors on a 2D grid. The initial conditions are set on this grid and all others variables
+are set to zero by default.
+
+
+### Usage
+
+```jl
+ds = Systems.magnetic_pendulum(γ=1, d=0.2, α=0.2, ω=0.8, N=3)
+integ = integrator(ds, u0=[0,0,0,0], reltol=1e-9)
+xg=range(-4,4,length=150)
+yg=range(-4,4,length=150)
+@time bsn = basin_general_ds(xg, yg, integ; dt=1., idxs=1:2)
+```
+
+Keyword parameters are:
+* `dt` : this is the time step. It is recomended to use a value above 1. The result may vary a little
+depending on this time step.
+* `idxs` : Indices of the variables defined on the plane.
+
+
+![image](https://imgur.com/qgBHZ8Ml.png)
 
 ### 1.5 - Notes about the method
 
 The algorithm search for the attractors on the grid and then identify the "color" of the
 initial condition with two basic methods:
-a) The trajectory hits an attractor: case solved
-b) The trajectory hits several already colored boxes with the same color in a row: we color our box with the same color.
+* a) The trajectory hits an attractor: case solved
+* b)  The trajectory hits several already colored boxes with the same color in a row: we color our box with the same color.
 
 This method is at worst as fast as tracking the attractors. In the best cases there is a signicative improvement.
 
-In case there is a need for computing the grid with more precision we leave a method that compute the basin with more precision. However, the attractors must be known already:
+### Structure of the basin:
 
-```jl
-using Basins, DynamicalSystems, DifferentialEquations
-ω=1.; F = 0.2
-ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
-integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+The basin of attraction is organized in the followin way:
 
-prec_basin = compute_basin_precise(bsn, integ_df);
-```
+* The atractors are even numbers in the matrix.
+* The basins corresponding the attractor n is numbered n+1.
+* If the trajectory diverges or converge to an atractor outside the defined grid it is labeled -1
 
-
-
-## 2 - Compute the Basin Entropy
+## 2 - Computataion of the Basin Entropy
 
 The [Basin Entropy](https://doi.org/10.1007/978-3-319-68109-2_2) is a measure of the impredictability of the basin of attraction of a dynamical system. An important feature of the basins of attraction is that for a value above log(2) we can say that the basin is fractalized.
 
@@ -207,7 +227,7 @@ The arguments of `basin_entropy` are:
 * `eps_x`, `eps_y` : size of the window that samples the basin to compute the entropy.
 
 
-## 3 - Compute the uncertainty exponent of a basin of attraction
+## 3 - Computation of the uncertainty exponent of a basin of attraction
 
 The [uncertainty exponent](https://en.wikipedia.org/wiki/Uncertainty_exponent) is conected to the [box-counting dimension](https://en.wikipedia.org/wiki/Box-counting_dimension). For a given resolution of the original basin, a sampling of the basin is done until the the fraction of uncertain boxes converges. The process is repeated for different box sizes and then the exponent is estimated.
 

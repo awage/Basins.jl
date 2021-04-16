@@ -1,3 +1,9 @@
+# 0.4.0
+* Big rework of the basin of attraction routine.
+* Reduced code based.
+* Introduced a method for higher dimension system.
+
+
 # 0.3.1
 * Some docs changes.
 * added parameters to compute_basin_precise
