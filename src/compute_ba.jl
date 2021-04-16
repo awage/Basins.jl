@@ -42,7 +42,7 @@ end
 ## Procedure described in  H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
 # The idea is to color the grid with the current color. When an attractor box is hit (even color), the initial condition is colored
 # with the color of its basin (odd color). If the trajectory hits another basin 10 times in row the IC is colored with the same
-# color as this basin. 
+# color as this basin.
 function procedure!(bsn_nfo::basin_info, n, m, u)
     max_check = 60
     next_c = bsn_nfo.basin[n,m]
@@ -497,4 +497,164 @@ function compute_basin_precise(bsn_nfo::basin_info, integ; radius=0.)
     end
 
     return new_bas
+end
+
+
+
+
+
+
+
+
+
+## Procedure described in  H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
+# The idea is to color the grid with the current color. When an attractor box is hit (even color), the initial condition is colored
+# with the color of its basin (odd color). If the trajectory hits another basin 10 times in row the IC is colored with the same
+# color as this basin.
+function procedure2!(bsn_nfo::basin_info, n, m, u)
+    max_check = 60
+    next_c = bsn_nfo.basin[n,m]
+    bsn_nfo.step += 1
+
+    if iseven(next_c) && bsn_nfo.consecutive_match < max_check
+        # check wether or not we hit an attractor (even color). Make sure we hit two consecutive times.
+        if bsn_nfo.prev_attr == next_c
+            bsn_nfo.prevConsecutives +=1
+        else
+            bsn_nfo.prev_attr = next_c
+            bsn_nfo.prevConsecutives =1
+            return 0;
+        end
+
+        if bsn_nfo.prevConsecutives >= 10
+        # Wait if we hit the attractor a 10 times in a row just to check if it is not a nearby trajectory
+            c3 = next_c+1
+            ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+            [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
+            reset_bsn_nfo!(bsn_nfo)
+            return c3
+         end
+    end
+
+    if next_c == 1 && bsn_nfo.consecutive_match < max_check
+        # uncolored box, color it with current odd color
+        bsn_nfo.basin[n,m] = bsn_nfo.current_color + 1
+        bsn_nfo.consecutive_match = 0
+        return 0
+    elseif next_c == 1 && bsn_nfo.consecutive_match >= max_check
+        # Maybe chaotic attractor, perodic or long recursion.
+        bsn_nfo.basin[n,m] = bsn_nfo.current_color
+        #println("1 y > max_check")
+        return 0
+    elseif next_c == bsn_nfo.current_color + 1
+        # hit a previously visited box with the current color, possible attractor?
+        if bsn_nfo.consecutive_match < max_check
+            bsn_nfo.consecutive_match += 1
+            return 0
+        else
+            println("got attractor")
+            ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+            [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
+            bsn_nfo.basin[n,m] = bsn_nfo.current_color
+            push!(bsn_nfo.attractors, [bsn_nfo.current_color/2, u]) # store attractor
+            # We continue iterating until we hit again the same attractor. In which case we stop.
+            return 0;
+        end
+    elseif iseven(next_c) && bsn_nfo.consecutive_match >= max_check
+        # We have checked the presence of an attractor: tidy up everything and get a new box.
+        ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
+        [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
+        bsn_nfo.current_color = bsn_nfo.next_avail_color
+        bsn_nfo.next_avail_color += 2
+        #println("even and > max check ", next_c)
+        reset_bsn_nfo!(bsn_nfo)
+        return 1;
+    else
+        return 0
+    end
+end
+
+
+"""
+    draw_basin2(xg, yg, integ, iter_f!::Function, reinit_f!::Function)
+Compute an estimate of the basin of attraction on a two-dimensional plane. Low level function,
+for higher level functions see: `basin_poincare_map`, `basin_discrete_map`, `basin_stroboscopic_map`
+
+## Arguments
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `integ` : integrator handle of the dynamical system.
+* `iter_f!` : function that iterates the map or the system, see step! from DifferentialEquations.jl and
+examples for a Poincaré map of a continuous system.
+* `reinit_f!` : function that sets the initial condition to test.
+"""
+function draw_basin2(xg, yg, integ; dt=0.1, idxs=1:2)
+
+
+    complete = 0;
+
+    reinit_f! = function reinit_f!(integ,u0)
+        v0 = zeros(1,dim)
+        v0[idxs]=u0
+        reinit!(integ,v0)
+    end
+
+    iter_f! = (integ) -> step!(integ, T, true)
+
+    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, idxs, 2,4,0,0,0,1,1,0,0,[])
+    dim = length(integ.u)
+    reset_bsn_nfo!(bsn_nfo)
+
+    while complete == 0
+         # pick the first empty box
+         get_empt_box = findall(bsn_nfo.basin .== 1)
+         if length(get_empt_box) == 0
+             complete = 1
+             break
+         end
+
+         ni = get_empt_box[1][1]
+         mi = get_empt_box[1][2]
+         x0 = xg[ni]
+         y0 = yg[mi]
+
+         # Tentatively assign a color: odd is for basins, even for attractors.
+         # First color is one
+         bsn_nfo.basin[ni,mi] = bsn_nfo.current_color + 1
+
+         # reinitialize integrator
+         u0 = zeros(1,dim)
+         u0[idxs]=[x0, y0]
+         reinit!(integ,u0)
+         next_box = 0
+         inlimbo = 0
+
+         while next_box == 0
+            old_u = integ.u[idxs]
+            step!(integ, dt, true) # perform a step
+            new_u = integ.u[idxs]
+            n,m = get_box(new_u, bsn_nfo)
+            if n>=0 # apply procedure only for boxes in the defined space
+                next_box = procedure2!(bsn_nfo, n, m, new_u)
+                if next_box > 1
+                    bsn_nfo.basin[ni,mi] = next_box
+                end
+                inlimbo = 0
+            else
+                # We are outside the box: anything can happen!
+                inlimbo +=1
+            end
+
+            if inlimbo > 60
+                # If we stay too long outside we check if the trajectory is stuck at some unknown attractor outside.
+                next_box = check_outside_the_screen!(bsn_nfo, new_u, old_u, ni, mi, inlimbo)
+            end
+
+         end
+    end
+
+    ind  = findall(iseven.(bsn_nfo.basin) .== true)
+    [bsn_nfo.basin[k] = bsn_nfo.basin[k]+1 for k in ind ]
+    bsn_nfo.basin = (bsn_nfo.basin .- 1).//2
+
+    return bsn_nfo
 end
