@@ -1,14 +1,20 @@
 
 
+
+
 function bisection_refine!(u_A, u_B, bsn_nfo, integ, basin_A, basin_B, tol)
 
-    # shortcut function
-    get_col = (u0) -> get_color_precise!(bsn_nfo, integ, u0)
+    # shortcut functions
+    function get_col(u0)
+        a = get_color_point!(bsn_nfo, integ, u0)
+        return iseven(a) ? Int(a/2) : Int((a-1)/2)
+    end
 
     function get_col_next(u0)
         bsn_nfo.reinit_f!(integ,u0)
         bsn_nfo.iter_f!(integ)
-        return get_col(integ.u[bsn_nfo.idxs])
+        a=get_col(bsn_nfo.get_u(integ))
+        return  a
     end
 
     # directing vector
@@ -122,7 +128,13 @@ sa,sb = compute_saddle(bsn, integ_df, [1], [2,3],1000)
 """
 function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_tol = 1e-6)
 
-    Na = length(unique(bsn_nfo.basin))
+    # shortcut functions
+    function get_col(u0)
+        a = get_color_point!(bsn_nfo, integ, u0)
+        return iseven(a) ? Int(a/2) : Int((a-1)/2)
+    end
+
+    Na = length(unique(bsn_nfo.basin))/2
     # basic check
     if (Set(bas_A) ∪ Set(bas_B)) != Set(collect(1:Na))
         @error "Generalized basins are not well defined"
@@ -165,13 +177,13 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_to
         dist = norm(u_A_r-u_B_r)
         bsn_nfo.reinit_f!(integ,u_A_r)
         bsn_nfo.iter_f!(integ)
-        u_A_it = deepcopy(integ.u[bsn_nfo.idxs]) # for some reason I have to deepcopy this vector
-        ca=get_color_precise!(bsn_nfo,integ,u_A_it)
+        u_A_it = deepcopy(bsn_nfo.get_u(integ)) # for some reason I have to deepcopy this vector
+        ca=get_col(u_A_it)
 
         bsn_nfo.reinit_f!(integ,u_B_r)
         bsn_nfo.iter_f!(integ)
-        u_B_it = deepcopy(integ.u[bsn_nfo.idxs])
-        cb=get_color_precise!(bsn_nfo,integ,u_B_it)
+        u_B_it = deepcopy(bsn_nfo.get_u(integ))
+        cb=get_col(u_B_it)
 
 
         if ca ∉ bas_A || cb ∉ bas_B

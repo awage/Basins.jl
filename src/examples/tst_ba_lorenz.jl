@@ -21,8 +21,9 @@ p= [F, G, a, b]
 ds = ContinuousDynamicalSystem(lorenz84, rand(3), p)
 integ  = integrator(ds; reltol=1e-8)
 
-xg=range(-1.,1.,length=100)
-yg=range(-1.5,1.6,length=100)
+xg=range(-1.,1.,length=200)
+yg=range(-1.5,1.6,length=200)
 
-@btime basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2);
+@time bsn = basin_general_ds(xg, yg, integ; dt=2., idxs=1:2)
+#@btime basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2);
 #plot(xg,yg,basin',seriestype=:heatmap)

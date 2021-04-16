@@ -10,8 +10,8 @@ using DifferentialEquations
 F = 0.2
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-xg = range(-2.2,2.2,length=250)
-yg = range(-2.2,2.2,length=250)
+xg = range(-2.2,2.2,length=150)
+yg = range(-2.2,2.2,length=150)
 
 @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 

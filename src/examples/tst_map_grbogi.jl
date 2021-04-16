@@ -50,8 +50,8 @@ for eps in eps_r
         k2 = rand(1:length(xg))
 
         c1 = bsn.basin[k1,k2]
-        c2 = Basins.get_color_precise!(bsn, integ, [θg[k1],xg[k2]+eps];radius=1e-6)
-        c3 = Basins.get_color_precise!(bsn, integ, [θg[k1],xg[k2]-eps];radius=1e-6)
+        c2 = Basins.get_color_point!(bsn, integ, [θg[k1],xg[k2]+eps])
+        c3 = Basins.get_color_point!(bsn, integ, [θg[k1],xg[k2]-eps])
 
         if length(unique([c1,Int(c2),Int(c3)]))>1
             N1 += 1

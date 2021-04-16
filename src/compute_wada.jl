@@ -63,6 +63,7 @@ epsilon = xg[2]-xg[1]
 
 """
 function detect_wada_merge_method(xg,yg,basin)
+
     num_att = length(unique(basin))
 
     v_list=get_list(basin, xg, yg)
@@ -134,13 +135,18 @@ The algorithm test for Wada basin in a dynamical system. It uses the dynamical s
 function detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
 
    ds_nfo = ds_info(bsn_nfo, integ)
-   num_att = length(unique(bsn_nfo.basin))
+   num_att = Int(length(unique(bsn_nfo.basin))/2)
 
    # helper function to obtain coordinates
    index_to_coord(p) = [bsn_nfo.xg[p[1]], bsn_nfo.yg[p[2]]]
 
+   # We remove the atractors for this computation
+   tmp_bsn = deepcopy(bsn_nfo.basin)
+   ind  = findall(iseven.(tmp_bsn) .== true)
+   [tmp_bsn[k] = tmp_bsn[k]+1 for k in ind ]
+
    # obtain points in the boundary
-   bnd = get_boundary_filt(bsn_nfo.basin)
+   bnd = get_boundary_filt(tmp_bsn)
    p1_ind = findall(bnd .> 0)
 
    # initialize empty array of indices and collection of empty sets of colors
@@ -150,7 +156,7 @@ function detect_wada_grid_method(integ, bsn_nfo::basin_info; max_iter=10)
 
    # Initialize matrices (step 1)
    for (k,p1) in enumerate(p1_ind)
-       p2, nbgs = get_neighbor_and_colors(bsn_nfo.basin, [p1[1], p1[2]])
+       p2, nbgs = get_neighbor_and_colors(tmp_bsn, [p1[1], p1[2]])
        if length(nbgs) > 1
            # keep track of different colors and neighbor point
            push!(clr_mat[k],nbgs...)

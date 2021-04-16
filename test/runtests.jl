@@ -3,6 +3,131 @@ using DynamicalSystems
 using Test
 using DifferentialEquations
 
+@testset "All tests" begin
+
+@testset "Test basin_stroboscopic_map" begin
+    ω=1.; F = 0.2
+    ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+    integ_df  = integrator(ds; alg=AutoTsit5(Rosenbrock23()), reltol=1e-8, abstol=1e-8, save_everystep=false)
+    xg = range(-2.2,2.2,length=100)
+    yg = range(-2.2,2.2,length=100)
+    @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+    @test length(unique(bsn.basin))/2 == 2
+    @test count(bsn.basin .== 3) == 5071
+    @test count(bsn.basin .== 5) == 4927
+
+end
+
+@testset "Test basin_poincare_map" begin
+    b=0.1665
+    ds = Systems.thomas_cyclical(b = b)
+    xg=range(-6.,6.,length=100)
+    yg=range(-6.,6.,length=100)
+    pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
+    bsn = basin_poincare_map(xg, yg, pmap)
+
+    @test length(unique(bsn.basin))/2 == 3
+    @test count(bsn.basin .== 3) == 4623
+    @test count(bsn.basin .== 5) == 2684
+    @test count(bsn.basin .== 7) == 2688
+end
+
+@testset "Test basin_discrete_map" begin
+    ds = Systems.henon(zeros(2); a = 1.4, b = 0.3)
+    integ_df  = integrator(ds)
+    xg = range(-2.,2.,length=100)
+    yg = range(-2.,2.,length=100)
+    bsn_nfo = basin_discrete_map(xg, yg, integ_df)
+
+    @test count(bsn_nfo.basin .== 3) == 4255
+    @test count(bsn_nfo.basin .== -1) == 5734
+end
+
+
+@testset "Test basin_entropy" begin
+    ω=1.; F = 0.2
+    ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+    integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+    xg = range(-2.2,2.2,length=150)
+    yg = range(-2.2,2.2,length=150)
+    bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+    Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
+    @test (trunc(Sb;digits=3) == 0.661)
+    @test (trunc(Sbb;digits=3) == 0.661)
+end
+
+@testset "Test Wada detection" begin
+    # Equations of motion:
+    function forced_pendulum!(du, u, p, t)
+        d = p[1]; F = p[2]; omega = p[3]
+        du[1] = u[2]
+        du[2] = -d*u[2] - sin(u[1])+ F*cos(omega*t)
+    end
+    # We have to define a callback to wrap the phase in [-π,π]
+    function affect!(integrator)
+        if integrator.u[1] < 0
+            integrator.u[1] += 2*π
+        else
+            integrator.u[1] -= 2*π
+        end
+    end
+    condition(u,t,integrator) = (integrator.u[1] < -π  || integrator.u[1] > π)
+    cb = DiscreteCallback(condition,affect!)
+
+    F = 1.66;   ω = 1.;    d=0.2
+    df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
+    integ  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, save_everystep=false, callback=cb)
+    xg = range(-pi,pi,length=100); yg = range(-2.,4.,length=100)
+    bsn = basin_stroboscopic_map(xg, yg, integ; T=2*pi/ω)
+
+    # Wada merge Haussdorff distances
+    # First remove attractors
+    ind  = findall(iseven.(bsn.basin) .== true)
+    basin_test = deepcopy(bsn.basin)
+    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    max_dist,min_dist = detect_wada_merge_method(xg,yg,basin_test)
+    epsilon = xg[2]-xg[1]
+    dmax = max_dist/epsilon
+    dmin = min_dist/epsilon
+    @test (round(dmax) == 6.)
+    @test (round(dmin) == 2.)
+
+    W = detect_wada_grid_method(integ, bsn; max_iter=5)
+    @test (trunc(W[3];digits=2) ==  0.96)
+
+end
+
+
+@testset "Test basin_stability" begin
+
+    ω=1.; F = 0.2
+    ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+    integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+    xg = range(-2.2,2.2,length=150)
+    yg = range(-2.2,2.2,length=150)
+    bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+
+    bs = basin_stability(bsn.basin)
+    @test (trunc(bs[1];digits=3) == 0.519)
+    @test (trunc(bs[2];digits=3) == 0.480)
+end
+
+
+@testset "Test box_counting_dimension" begin
+
+    ω=1.; F = 0.2
+    ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+    integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+    xg = range(-2.2,2.2,length=150)
+    yg = range(-2.2,2.2,length=150)
+    bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+    ind  = findall(iseven.(bsn.basin) .== true)
+    basin_test = deepcopy(bsn.basin)
+    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    bd = box_counting_dim(xg, yg, basin_test)
+    @test (trunc(bd;digits=2) == 1.89)
+end
+
 @testset "Test compute saddle straddle" begin
     v = [-0.7024272244361562 0.7358943669783878;
     0.6884108286512226 0.2883122496731336;
@@ -127,99 +252,4 @@ using DifferentialEquations
 
 end
 
-@testset "Test basin_stroboscopic_map" begin
-    ω=0.5
-    ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-    integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-    xg=range(-2,2,length=100)
-    yg=range(-2,2,length=100)
-    bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-    @test length(unique(bsn_nfo.basin)) == 3
-    @test count(bsn_nfo.basin .== 1) == 3285
-    @test count(bsn_nfo.basin .== 2) == 3285
-    @test count(bsn_nfo.basin .== 3) == 3430
-end
-
-@testset "Test basin_poincare_map" begin
-    b=0.1665
-    ds = Systems.thomas_cyclical(b = b)
-    integ=integrator(ds, reltol=1e-9)
-    xg=range(-6.,6.,length=100)
-    yg=range(-6.,6.,length=100)
-    bsn_nfo = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8))
-    @test length(unique(bsn_nfo.basin)) == 3
-    @test count(bsn_nfo.basin .== 1) == 4604
-    @test count(bsn_nfo.basin .== 2) == 2813
-    @test count(bsn_nfo.basin .== 3) == 2583
-end
-
-@testset "Test basin_discrete_map" begin
-    ds = Systems.henon(zeros(2); a = 1.4, b = 0.3)
-    integ_df  = integrator(ds)
-    xg = range(-2.,2.,length=100)
-    yg = range(-2.,2.,length=100)
-    bsn_nfo = basin_discrete_map(xg, yg, integ_df)
-    @test length(unique(bsn_nfo.basin)) == 2
-    @test count(bsn_nfo.basin .== 1) == 4269
-    @test count(bsn_nfo.basin .== -1) == 5731
-end
-
-
-@testset "Test basin_entropy" begin
-    ω=0.5
-    ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-    integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-    xg=range(-2,2,length=100)
-    yg=range(-2,2,length=100)
-    bsn_nfo = basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-    Sb,Sbb = basin_entropy(bsn_nfo.basin; eps_x=20, eps_y=20)
-    @test (trunc(Sb;digits=3) == 0.853)
-    @test (trunc(Sbb;digits=3) == 0.889)
-end
-
-@testset "Test Wada detection" begin
-    ω=0.5
-    ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-    integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-    xg=range(-2,2,length=100)
-    yg=range(-2,2,length=100)
-    bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-    # Wada merge Haussdorff distances
-    max_dist,min_dist = detect_wada_merge_method(xg,yg,bsn_nfo.basin)
-    epsilon = xg[2]-xg[1]
-    dmax = max_dist/epsilon
-    dmin = min_dist/epsilon
-    @test (round(dmax) == 11.)
-    @test (round(dmin) == 11.)
-
-    W = detect_wada_grid_method(integ, bsn_nfo; max_iter=4)
-    @test (trunc(W[3];digits=3) ==  0.627)
-
-end
-
-
-@testset "Test basin_stability" begin
-    ω=0.5
-    ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-    integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-    xg=range(-2,2,length=100)
-    yg=range(-2,2,length=100)
-    bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-    bs = basin_stability(bsn_nfo.basin)
-    @test (trunc(bs[1];digits=3) == 0.328)
-    @test (trunc(bs[2];digits=3) == 0.328)
-    @test (trunc(bs[3];digits=3) == 0.343)
-end
-
-
-@testset "Test box_counting_dimension" begin
-    ω=0.5
-    ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=ω, N=3)
-    integ = integrator(ds, u0=[0,0,0,0], reltol=1e-14)
-    xg=range(-2,2,length=100)
-    yg=range(-2,2,length=100)
-    bsn_nfo=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
-    bd = box_counting_dim(xg, yg, bsn_nfo.basin)
-
-    @test (trunc(bd;digits=3) == 1.669)
 end

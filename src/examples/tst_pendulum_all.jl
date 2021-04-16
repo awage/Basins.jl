@@ -32,8 +32,8 @@ p=[d, F, ω]
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), p)
 integ_df  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, save_everystep=false, callback=cb)
 
-xres=200
-yres=200
+xres=400
+yres=400
 
 # range for forced pend
 xg = range(-pi,pi,length=xres)

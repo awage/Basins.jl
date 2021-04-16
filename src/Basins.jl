@@ -10,7 +10,7 @@ using Roots
 
 export draw_basin, basin_entropy, detect_wada_grid_method, detect_wada_merge_method
 export basin_poincare_map, basin_stroboscopic_map, basin_discrete_map, box_counting_dim
-export basin_stability,draw_basin2
+export basin_stability, basin_general_ds
 
 export compute_saddle,compute_basin_precise
 # Write your package code here.
