@@ -1,4 +1,4 @@
-
+PoincareMap = ChaosTools.PoincareMap
 
 mutable struct basin_info{I,F,V}
     basin :: I
