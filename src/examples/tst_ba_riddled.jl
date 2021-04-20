@@ -26,8 +26,6 @@ xg=range(8.,16.,length=100)
 yg=range(0.5,1.,length=100)
 
 # compute basin
-iter_f! = (x) -> step!(x)
-reinit_f! = (x, y) -> reinit!(x, y)
 
-@time basin=draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+@time basin=basin_map(xg, yg, integ)
 plot(xg,yg,basin',seriestype=:heatmap)

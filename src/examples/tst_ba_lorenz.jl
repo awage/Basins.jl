@@ -19,11 +19,8 @@ end
 F=6.846; G=1.287; a=0.25; b=4.;
 p= [F, G, a, b]
 ds = ContinuousDynamicalSystem(lorenz84, rand(3), p)
-integ  = integrator(ds; reltol=1e-8)
-
 xg=range(-1.,1.,length=200)
 yg=range(-1.5,1.6,length=200)
-
-@time bsn = basin_general_ds(xg, yg, integ; dt=2., idxs=1:2)
-#@btime basin = basin_poincare_map(xg, yg, integ; plane=(3, 0.), idxs = 1:2);
-#plot(xg,yg,basin',seriestype=:heatmap)
+pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
+@time bsn = basin_map(xg, yg, pmap)
+plot(xg,yg,bsn.basin',seriestype=:heatmap)

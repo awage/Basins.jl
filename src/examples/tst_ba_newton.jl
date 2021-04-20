@@ -26,7 +26,7 @@ integ  = integrator(ds)
 xg=range(-1.5,1.5,length=200)
 yg=range(-1.5,1.5,length=200)
 
-@time bsn=basin_discrete_map(xg, yg, integ)
+@time bsn=basin_map(xg, yg, integ)
 
 plot(xg,yg,bsn.basin',seriestype=:heatmap)
 

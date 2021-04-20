@@ -21,15 +21,13 @@ end
 p= [0.05, 7.5, ω, α]
 ds = ContinuousDynamicalSystem(ueda, rand(3), p)
 integ  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-iter_f! = (x) -> step!(x, 2*pi/ω, true)
-reinit_f! = (integ,y) -> reinit!(integ,[y...,0.], t0=0)
 
-xres=400
-yres=400
+xres=100
+yres=100
 
 xg = range(-2.,2.,length=xres)
 yg = range(-7.,7.,length=yres)
 
-@time basin = draw_basin(xg, yg, integ, iter_f!, reinit_f!)
+@time basin = basin_map(xg, yg, integ; T=2π/ω)
 
 plot(xg,yg,basin', seriestype=:heatmap)

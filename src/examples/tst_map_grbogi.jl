@@ -25,7 +25,8 @@ integ  = integrator(ds)
 θg=range(0,2π,length=256*2)
 xg=range(-0.5,0.5,length=256)
 
-@time bsn=basin_discrete_map(θg, xg, integ)
+@time bsn=Basins.basin_map(θg, xg, integ)
+@time bns2=ChaosTools.basin_map(θg, xg, integ)
 
 #plot(θg,xg,bsn.basin',seriestype=:heatmap)
 # Estimation using box counting

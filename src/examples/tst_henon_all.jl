@@ -17,7 +17,7 @@ xg = range(-2.,2.,length=xres)
 yg = range(-2.,2.,length=yres)
 
 # compute basin
-@time basin = basin_discrete_map(xg, yg, integ_df)
+@time basin = Basins.basin_map(xg, yg, integ_df)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)

@@ -13,7 +13,7 @@ integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=150)
 yg = range(-2.2,2.2,length=150)
 
-@time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
 
 sa,sb = compute_saddle(integ_df, bsn, [1], [2]; N=1000)
 
@@ -69,7 +69,7 @@ xg = range(-pi,pi,length=xres)
 yg = range(-2.,4.,length=yres)
 
 # compute basin
-@time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω)
+@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
 
 Na = length(unique(bsn.basin))
 

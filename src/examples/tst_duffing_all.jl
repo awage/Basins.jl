@@ -20,7 +20,7 @@ xg = range(-2.2,2.2,length=200)
 yg = range(-2.2,2.2,length=200)
 
 
-@time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+@time bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)

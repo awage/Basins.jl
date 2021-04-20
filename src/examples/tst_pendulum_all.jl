@@ -32,15 +32,15 @@ p=[d, F, ω]
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), p)
 integ_df  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, save_everystep=false, callback=cb)
 
-xres=400
-yres=400
+xres=100
+yres=100
 
 # range for forced pend
 xg = range(-pi,pi,length=xres)
 yg = range(-2.,4.,length=yres)
 
 # compute basin
-@time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω)
+@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
