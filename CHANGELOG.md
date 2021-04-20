@@ -1,3 +1,9 @@
+#0.5.0
+* Simplified method for basins.
+* fix tests.
+* More examples.
+
+
 # 0.4.0
 * Big rework of the basin of attraction routine.
 * Reduced code based.

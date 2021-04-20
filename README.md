@@ -38,7 +38,7 @@ Now we define the grid of ICs that we want to analyze and launch the procedure:
 ```jl
 xg = range(-2.2,2.2,length=200)
 yg = range(-2.2,2.2,length=200)
-bsn=basin_stroboscopic_map(xg, yg, integ; T=2π/ω, idxs=1:2)
+bsn=basin_map(xg, yg, integ; T=2π/ω)
 ```
 
 The keyword arguments are:
@@ -218,9 +218,9 @@ using Basins, DynamicalSystems, DifferentialEquations
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
 
-Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
+Sb,Sbb = basin_entropy(bsn; eps_x=20, eps_y=20)
 ```
 The arguments of `basin_entropy` are:
 * `basin` : The basin computed on a grid.
@@ -240,9 +240,9 @@ using Basins, DynamicalSystems, DifferentialEquations
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
 
-bd = box_counting_dim(xg, yg, bsn.basin)
+bd = box_counting_dim(xg, yg, bsn)
 
 # uncertainty exponent is the dimension of the plane minus the box-couting dimension
 ue = 2-bd
@@ -283,9 +283,9 @@ cb = DiscreteCallback(condition,affect!)
 F = 1.66; ω = 1.; d=0.2
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
 integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
-bsn = basin_stroboscopic_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
+bsn = basin_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
 
-max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn.basin)
+max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn)
 # grid resolution
 epsilon = xg[2]-xg[1]
 # if dmax is large then this is not Wada
@@ -324,7 +324,7 @@ cb = DiscreteCallback(condition,affect!)
 F = 1.66; ω = 1.; d=0.2
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
 integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
-bsn = basin_stroboscopic_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
+bsn = basin_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
 
 @show W = detect_wada_grid_method(integ, bsn; max_iter=10)
 ```
@@ -364,7 +364,7 @@ cb = DiscreteCallback(condition,affect!)
 F = 1.66; ω = 1.; d=0.2
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
 integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
-bsn = basin_stroboscopic_map(range(-pi,pi,length=200), range(-2.,4.,length=200), integ; T=2*pi/ω)
+bsn = basin_map(range(-pi,pi,length=200), range(-2.,4.,length=200), integ; T=2*pi/ω)
 
 # sa is the left set and sb is the right set.
 sa,sb = compute_saddle(integ, bsn, [1], [2,3], 1000)
@@ -376,7 +376,7 @@ plot!(s[:,1],s[:,2],seriestype=:scatter, markercolor=:blue)
 
 The arguments of `compute_saddle` are:
 * `integ` : the matrix containing the information of the basin.
-* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
+* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_map` or `basin_poincare_map`.
 * `bas_A` : vector with the indices of the attractors that will represent the generalized basin A
 * `bas_B` : vector with the indices of the attractors that will represent the generalized basin B. Notice that `bas_A ∪ bas_B = [1:N]` and `bas_A ∩ bas_B = ∅`
 
@@ -399,9 +399,9 @@ using Basins, DynamicalSystems, DifferentialEquations
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
 
-@show basin_stability(bsn.basin)
+@show basin_stability(bsn)
 ```
 
 ## 7 - More examples
