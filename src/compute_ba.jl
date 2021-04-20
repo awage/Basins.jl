@@ -1,4 +1,3 @@
-export draw_basin!, basin_map, basin_general_ds
 
 
 mutable struct basin_info{I,F,V}

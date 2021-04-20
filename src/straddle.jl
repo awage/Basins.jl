@@ -155,10 +155,10 @@ function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_to
     for p in bsn_nfo.attractors
         @show  p
         if p[1] == bas_A[1]
-            u_A = p[2]
+            u_A = [p[2],p[3]]
         end
         if p[1] == bas_B[1]
-            u_B = p[2]
+            u_B = [p[2],p[3]]
         end
     end
 

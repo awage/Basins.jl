@@ -14,15 +14,23 @@ This function compute the box-counting dimension of the boundary. It is related 
 
 """
 function box_counting_dim(xg, yg, basin; kwargs...)
-
     bnd = get_boundary_filt(basin)
     I1 = findall(bnd .== 1);
     v = hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...)
     v = Dataset(v')
-
     return generalized_dim(v; q=0, kwargs...)
+end
+
+function box_counting_dim(xg, yg, bsn::basin_info; kwargs...)
+
+    ind  = findall(iseven.(bsn.basin) .== true)
+    basin_test = deepcopy(bsn.basin)
+    [basin_test[k] =basin_test[k]+1 for k in ind ]
+
+    return box_counting_dim(xg, yg, basin_test; kwargs...)
 
 end
+
 
 
 function uncertainty_dimension_sample(xg, yg, basin)

@@ -62,6 +62,13 @@ epsilon = xg[2]-xg[1]
 ```
 
 """
+function detect_wada_merge_method(xg,yg,bsn::basin_info)
+    ind  = findall(iseven.(bsn.basin) .== true)
+    basin_test = deepcopy(bsn.basin)
+    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    return detect_wada_merge_method(xg,yg,basin_test)
+end
+
 function detect_wada_merge_method(xg,yg,basin)
 
     num_att = length(unique(basin))
@@ -92,6 +99,8 @@ function detect_wada_merge_method(xg,yg,basin)
 
    return max_dist, min_dist
 end
+
+
 
 function haussdorff_dist(v01,v02)
        kdtree1 = KDTree(v01)

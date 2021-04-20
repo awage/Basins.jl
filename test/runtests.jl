@@ -11,7 +11,7 @@ using DifferentialEquations
     integ_df  = integrator(ds; alg=AutoTsit5(Rosenbrock23()), reltol=1e-8, abstol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=100)
     yg = range(-2.2,2.2,length=100)
-    @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+    @time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
     @test length(unique(bsn.basin))/2 == 2
     @test count(bsn.basin .== 3) == 5376
     @test count(bsn.basin .== 5) == 4622
@@ -24,7 +24,7 @@ end
     xg=range(-6.,6.,length=100)
     yg=range(-6.,6.,length=100)
     pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
-    bsn = basin_poincare_map(xg, yg, pmap)
+    bsn = Basins.basin_map(xg, yg, pmap)
 
     @test length(unique(bsn.basin))/2 == 3
     @test count(bsn.basin .== 3) == 4639
@@ -37,7 +37,7 @@ end
     integ_df  = integrator(ds)
     xg = range(-2.,2.,length=100)
     yg = range(-2.,2.,length=100)
-    bsn_nfo = basin_discrete_map(xg, yg, integ_df)
+    bsn_nfo = Basins.basin_map(xg, yg, integ_df)
 
     @test count(bsn_nfo.basin .== 3) == 4127
     @test count(bsn_nfo.basin .== -1) == 5730
@@ -50,7 +50,7 @@ end
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=150)
     yg = range(-2.2,2.2,length=150)
-    bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+    bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
     Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
     @test (trunc(Sb;digits=3) == 0.663)
     @test (trunc(Sbb;digits=3) == 0.663)
@@ -78,14 +78,11 @@ end
     df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
     integ  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, save_everystep=false, callback=cb)
     xg = range(-pi,pi,length=100); yg = range(-2.,4.,length=100)
-    bsn = basin_stroboscopic_map(xg, yg, integ; T=2*pi/ω)
+    bsn = Basins.basin_map(xg, yg, integ; T=2*pi/ω)
 
     # Wada merge Haussdorff distances
     # First remove attractors
-    ind  = findall(iseven.(bsn.basin) .== true)
-    basin_test = deepcopy(bsn.basin)
-    [basin_test[k] =basin_test[k]+1 for k in ind ]
-    max_dist,min_dist = detect_wada_merge_method(xg,yg,basin_test)
+    max_dist,min_dist = detect_wada_merge_method(xg,yg,bsn)
     epsilon = xg[2]-xg[1]
     dmax = max_dist/epsilon
     dmin = min_dist/epsilon
@@ -105,8 +102,7 @@ end
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=150)
     yg = range(-2.2,2.2,length=150)
-    bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
-
+    bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
     bs = basin_stability(bsn.basin)
     @test (trunc(bs[1];digits=3) == 0.492)
     @test (trunc(bs[2];digits=3) == 0.507)
@@ -114,17 +110,13 @@ end
 
 
 @testset "Test box_counting_dimension" begin
-
     ω=1.; F = 0.2
     ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=150)
     yg = range(-2.2,2.2,length=150)
-    bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
-    ind  = findall(iseven.(bsn.basin) .== true)
-    basin_test = deepcopy(bsn.basin)
-    [basin_test[k] =basin_test[k]+1 for k in ind ]
-    bd = box_counting_dim(xg, yg, basin_test)
+    bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+    bd = box_counting_dim(xg, yg, bsn)
     @test (trunc(bd;digits=2) == 1.9)
 end
 
@@ -244,7 +236,7 @@ end
     integ_df  = integrator(ds; alg=AutoTsit5(Rosenbrock23()), reltol=1e-8, abstol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=200)
     yg = range(-2.2,2.2,length=200)
-    @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
+    @time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
     sa,sb = compute_saddle(integ_df, bsn, [1], [2]; N=100)
     s = hcat(sa...)
     hd = Basins.haussdorff_dist(s,v)

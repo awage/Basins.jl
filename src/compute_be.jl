@@ -16,37 +16,45 @@ a new tool to analyze uncertainty in dynamical systems, Sci. Rep., 6, 31416, (20
 
 """
 function basin_entropy(basin; eps_x=20, eps_y=20)
-r,c= size(basin)
-vals = unique(basin)
-S=Int16(length(vals))
-pn=zeros(1,S)
-Sb=0
-Nb=0
-N=0
-for x = 1:eps_x:(r-eps_x+1)
-    for y = 1:eps_y:(c-eps_y+1)
-        x_coor=x:x+eps_x-1
-        y_coor=y:y+eps_y-1
-        box_values=[basin[k,m] for k in x_coor, m in y_coor]
-        N=N+1
-        for (k,v) in enumerate(vals)
-            pn[k]=count(x->x==Float64(v),box_values)/length(box_values)
+    r,c= size(basin)
+    vals = unique(basin)
+    S=Int16(length(vals))
+    pn=zeros(Float64,1,S)
+    Sb=0
+    Nb=0
+    N=0
+    for x = 1:eps_x:(r-eps_x+1)
+        for y = 1:eps_y:(c-eps_y+1)
+            x_coor=x:x+eps_x-1
+            y_coor=y:y+eps_y-1
+            box_values=[basin[k,m] for k in x_coor, m in y_coor]
+            N=N+1
+            for (k,v) in enumerate(vals)
+                pn[k]=count(x->x==Float64(v),box_values)/length(box_values)
+            end
+            #push!(p0,pn[1])
+            Nb = Nb + (length(unique(box_values))>1)
+            Sb = Sb + sum(entropy.(pn))
         end
-        #push!(p0,pn[1])
-        Nb = Nb + (length(unique(box_values))>1)
-        Sb = Sb + sum(entropy.(pn))
     end
-end
-    return Sb/N, Sb/Nb
+        return Sb/N, Sb/Nb
 end
 
-function entropy(p)
+
+function entropy(p::Float64)
     if p == 0
-        h = 0
+        h = 0.
     else
         h=p*log(1/p)
     end
     return h
+end
+
+function basin_entropy(bsn::basin_info; eps_x=20, eps_y=20)
+    ind  = findall(iseven.(bsn.basin) .== true)
+    basin_test = deepcopy(bsn.basin)
+    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    basin_entropy(basin_test; eps_x=eps_x, eps_y=eps_y)
 end
 
 """
@@ -71,4 +79,12 @@ end
 
 return v
 
+end
+
+
+function basin_stability(bsn::basin_info)
+    ind  = findall(iseven.(bsn.basin) .== true)
+    basin_test = deepcopy(bsn.basin)
+    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    return basin_stability(basin_test)
 end
