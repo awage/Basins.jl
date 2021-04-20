@@ -28,20 +28,23 @@ Compute an estimate of the basin of attraction on a two-dimensional plane using 
 
 ## Arguments
 * `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
-* `integ` : integrator handle of the dynamical system.
+* `pmap` : A Poincaré map as defined in [ChaosTools.jl](https://github.com/JuliaDynamics/ChaosTools.jl)
 
 ## Keyword Arguments
-* `plane` A `Tuple{Int, <: Number}`, like `(j, r)` : the plane is defined
-  as when the `j` variable of the system equals the value `r`. It can also be
-  a vector of length `D+1`. The first `D` elements of the
-  vector correspond to ``\\mathbf{a}`` while the last element is ``b``. See ChaosTools.jl
-* `Tmax` : maximum time to search for an intersection with the plane before giving up.
-* `direction = -1` : Only crossings with `sign(direction)` are considered to be long to the surface of section.
-Positive direction means going from less than ``b`` to greater than ``b``.
-* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to
-the entire state.
-* `rootkw = (xrtol = 1e-6, atol = 1e-6)` : A `NamedTuple` of keyword arguments
-passed to `find_zero` from [Roots.jl](https://github.com/JuliaMath/Roots.jl).
+* `Ncheck` : A parameter that sets the number of consecutives hits of an attractor before deciding the basin
+of the initial condition.
+
+## Example:
+
+
+```jl
+using DynamicalSystems, Basins
+ds = Systems.rikitake(μ = 0.47, α = 1.0)
+xg=range(-6.,6.,length=200); yg=range(-6.,6.,length=200)
+pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
+bsn = basin_poincare_map(xg, yg, pmap)
+```
+
 """
 function basin_poincare_map(xg, yg, pmap, idxs = 1:2; Ncheck = 2)
     i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
@@ -84,6 +87,21 @@ function basin_stroboscopic_map(xg, yg, integ; T=1., idxs=1:2, Ncheck = 2)
 
 end
 
+
+"""
+    basin_general(xg, yg, integ; T=1., idxs=1:2)
+Compute an estimate of the basin of attraction on a two-dimensional plane using a stroboscopic map.
+
+## Arguments
+* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `integ` : integrator handle of the dynamical system.
+
+## Keyword Arguments
+* `dt` : Time step of the integrator. It recommended to use values above 1.
+* `idxs = 1:D` : Optionally you can choose which variables to save. Defaults to the entire state.
+* `Ncheck` : A parameter that sets the number of consecutives hits of an attractor before deciding the basin
+of the initial condition.
+"""
 function basin_general_ds(xg, yg, integ; dt=1., idxs=1:2, Ncheck = 10)
 
     return basin_stroboscopic_map(xg, yg, integ; T=dt, idxs=idxs, Ncheck = Ncheck)
@@ -134,11 +152,13 @@ function procedure!(bsn_nfo::basin_info, n, m, u, Ncheck)
     next_c = bsn_nfo.basin[n,m]
     bsn_nfo.step += 1
 
+
     if iseven(next_c) && bsn_nfo.consecutive_match < max_check
-        # check wether or not we hit an attractor (even color). Make sure we hit two consecutive times.
+        # check wether or not we hit an attractor (even color). Make sure we hit Ncheck consecutive times.
         if bsn_nfo.prev_attr == next_c
             bsn_nfo.prevConsecutives +=1
         else
+            # reset prevConsecutives
             bsn_nfo.prev_attr = next_c
             bsn_nfo.prevConsecutives =1
             return 0;
@@ -150,8 +170,11 @@ function procedure!(bsn_nfo::basin_info, n, m, u, Ncheck)
             c3 = next_c+1
             ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
             if Ncheck == 2
+                # For maps we can color the previous steps as well. Every point of the trajectory lead
+                # to the attractor
                 [ bsn_nfo.basin[k[1],k[2]] = c3  for k in ind]
             else
+                # For higher dimensions we erase the past iterations.
                 [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind] # erase visited boxes
             end
             reset_bsn_nfo!(bsn_nfo)
@@ -166,9 +189,10 @@ function procedure!(bsn_nfo::basin_info, n, m, u, Ncheck)
         return 0
     elseif next_c == 1 && bsn_nfo.consecutive_match >= max_check
         # Maybe chaotic attractor, perodic or long recursion.
+        # Color this box as part of an attractor
         bsn_nfo.basin[n,m] = bsn_nfo.current_color
         bsn_nfo.consecutive_match = max_check
-        println("1 y > max_check")
+        #println("1 y > max_check")
         return 0
     elseif next_c == bsn_nfo.current_color + 1
         # hit a previously visited box with the current color, possible attractor?
@@ -185,7 +209,8 @@ function procedure!(bsn_nfo::basin_info, n, m, u, Ncheck)
             return 0;
         end
     elseif isodd(next_c) && 0 < next_c < bsn_nfo.current_color &&  bsn_nfo.consecutive_match < max_check && Ncheck == 2
-        # hit a colored basin point of the wrong basin, happens all the time, we check if it happens 10 times in a row or if it happens N times along the trajectory whether to decide if it is another basin.
+        # hit a colored basin point of the wrong basin, happens all the time, we check if it happens
+        #10 times in a row or if it happens N times along the trajectory whether to decide if it is another basin.
         bsn_nfo.consecutive_other_basins += 1
 
         if bsn_nfo.prev_bas == next_c &&  bsn_nfo.prev_step == bsn_nfo.step-1
@@ -205,7 +230,7 @@ function procedure!(bsn_nfo::basin_info, n, m, u, Ncheck)
         end
         return 0
     elseif iseven(next_c) &&   (max_check <= bsn_nfo.consecutive_match < 2*max_check)
-        # We make sure we hit the basin 60 consecutive times
+        # We make sure we hit the attractor 60 consecutive times
         bsn_nfo.consecutive_match+=1
         return 0
     elseif iseven(next_c) && bsn_nfo.consecutive_match >= max_check*2
@@ -252,10 +277,8 @@ function draw_basin!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_
              break
          end
 
-         ni = get_empt_box[1][1]
-         mi = get_empt_box[1][2]
-         x0 = xg[ni]
-         y0 = yg[mi]
+         ni = get_empt_box[1][1]; mi = get_empt_box[1][2]
+         x0 = xg[ni]; y0 = yg[mi]
 
          # Tentatively assign a color: odd is for basins, even for attractors.
          # First color is one
@@ -329,7 +352,7 @@ end
 function check_outside_the_screen!(bsn_nfo::basin_info, new_u, old_u, inlimbo)
 
     if norm(new_u-old_u) < 1e-5
-        #println("Got stuck somewhere, Maybe an attractor outside the screen: ", new_u)
+        println("Got stuck somewhere, Maybe an attractor outside the screen: ", new_u)
         ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
         [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind]
         reset_bsn_nfo!(bsn_nfo)

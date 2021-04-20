@@ -13,8 +13,8 @@ using DifferentialEquations
     yg = range(-2.2,2.2,length=100)
     @time bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
     @test length(unique(bsn.basin))/2 == 2
-    @test count(bsn.basin .== 3) == 5071
-    @test count(bsn.basin .== 5) == 4927
+    @test count(bsn.basin .== 3) == 5376
+    @test count(bsn.basin .== 5) == 4622
 
 end
 
@@ -27,9 +27,9 @@ end
     bsn = basin_poincare_map(xg, yg, pmap)
 
     @test length(unique(bsn.basin))/2 == 3
-    @test count(bsn.basin .== 3) == 4623
-    @test count(bsn.basin .== 5) == 2684
-    @test count(bsn.basin .== 7) == 2688
+    @test count(bsn.basin .== 3) == 4639
+    @test count(bsn.basin .== 5) == 2680
+    @test count(bsn.basin .== 7) == 2665
 end
 
 @testset "Test basin_discrete_map" begin
@@ -39,8 +39,8 @@ end
     yg = range(-2.,2.,length=100)
     bsn_nfo = basin_discrete_map(xg, yg, integ_df)
 
-    @test count(bsn_nfo.basin .== 3) == 4255
-    @test count(bsn_nfo.basin .== -1) == 5734
+    @test count(bsn_nfo.basin .== 3) == 4127
+    @test count(bsn_nfo.basin .== -1) == 5730
 end
 
 
@@ -52,8 +52,8 @@ end
     yg = range(-2.2,2.2,length=150)
     bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
     Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
-    @test (trunc(Sb;digits=3) == 0.661)
-    @test (trunc(Sbb;digits=3) == 0.661)
+    @test (trunc(Sb;digits=3) == 0.663)
+    @test (trunc(Sbb;digits=3) == 0.663)
 end
 
 @testset "Test Wada detection" begin
@@ -93,7 +93,7 @@ end
     @test (round(dmin) == 2.)
 
     W = detect_wada_grid_method(integ, bsn; max_iter=5)
-    @test (trunc(W[3];digits=2) ==  0.96)
+    @test (trunc(W[3];digits=2) ==  0.93)
 
 end
 
@@ -108,8 +108,8 @@ end
     bsn = basin_stroboscopic_map(xg, yg, integ_df; T=2*pi/ω, idxs=1:2)
 
     bs = basin_stability(bsn.basin)
-    @test (trunc(bs[1];digits=3) == 0.519)
-    @test (trunc(bs[2];digits=3) == 0.480)
+    @test (trunc(bs[1];digits=3) == 0.492)
+    @test (trunc(bs[2];digits=3) == 0.507)
 end
 
 
@@ -125,7 +125,7 @@ end
     basin_test = deepcopy(bsn.basin)
     [basin_test[k] =basin_test[k]+1 for k in ind ]
     bd = box_counting_dim(xg, yg, basin_test)
-    @test (trunc(bd;digits=2) == 1.89)
+    @test (trunc(bd;digits=2) == 1.9)
 end
 
 @testset "Test compute saddle straddle" begin

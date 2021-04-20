@@ -86,7 +86,7 @@ plot(xg,yg,bsn.basin',seriestype=:heatmap)
 ```
 
 The arguments are:
-* `pmap` : A poincaré map as defined in [ChaosTools.jl](https://github.com/JuliaDynamics/ChaosTools.jl)
+* `pmap` : A Poincaré map as defined in [ChaosTools.jl](https://github.com/JuliaDynamics/ChaosTools.jl)
 
 
 ![image](https://i.imgur.com/hKcOiwTl.png)
