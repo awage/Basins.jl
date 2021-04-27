@@ -50,7 +50,7 @@ function entropy(p::Float64)
     return h
 end
 
-function basin_entropy(bsn::basin_info; eps_x=20, eps_y=20)
+function basin_entropy(bsn::BasinInfo; eps_x=20, eps_y=20)
     ind  = findall(iseven.(bsn.basin) .== true)
     basin_test = deepcopy(bsn.basin)
     [basin_test[k] =basin_test[k]+1 for k in ind ]
@@ -82,7 +82,7 @@ return v
 end
 
 
-function basin_stability(bsn::basin_info)
+function basin_stability(bsn::BasinInfo)
     ind  = findall(iseven.(bsn.basin) .== true)
     basin_test = deepcopy(bsn.basin)
     [basin_test[k] =basin_test[k]+1 for k in ind ]

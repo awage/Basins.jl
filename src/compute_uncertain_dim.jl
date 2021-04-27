@@ -21,7 +21,7 @@ function box_counting_dim(xg, yg, basin; kwargs...)
     return generalized_dim(v; q=0, kwargs...)
 end
 
-function box_counting_dim(xg, yg, bsn::basin_info; kwargs...)
+function box_counting_dim(xg, yg, bsn::BasinInfo; kwargs...)
 
     ind  = findall(iseven.(bsn.basin) .== true)
     basin_test = deepcopy(bsn.basin)
@@ -35,7 +35,7 @@ end
 
 
 """
-    uncertainty_exponent(bsn::basin_info, integ; sizes=0.)
+    uncertainty_exponent(bsn::BasinInfo, integ; sizes=0.)
 This function estimates the uncertainty exponent of the boundary. It is related to the uncertainty dimension.
 
 [C. Grebogi, S. W. McDonald, E. Ott, J. A. Yorke, Final state sensitivity: An obstruction to predictability, Physics Letters A, 99, 9, 1983]
@@ -48,7 +48,7 @@ This function estimates the uncertainty exponent of the boundary. It is related 
 * `sizes` array that specifies the scales at which the uncertainty exponent should be computed.
 
 """
-function uncertainty_exponent(bsn::basin_info, integ; sizes=0.)
+function uncertainty_exponent(bsn::BasinInfo, integ; sizes=0.)
     xg = bsn.xg; yg = bsn.yg;
     nx=length(xg)
     ny=length(yg)

@@ -101,7 +101,7 @@ end
 
 
 """
-    compute_saddle(bsn_nfo::basin_info, integ; max_iter=10)
+    compute_saddle(bsn_nfo::BasinInfo, integ; max_iter=10)
 The algorithm the saddle that lies in  a boundary of the basin of attraction of a dynamical system. When the boundary is fractal, this
 set is known as the chaotic saddle and is responsible for the transient dynamics of the system. The saddle is computed with the Saddle-Straddle
 algorithm. It is necessary to define two `generalized basin`, that is we must separate the basin into two sets (see also keyword arguments).
@@ -126,7 +126,7 @@ sa,sb = compute_saddle(bsn, integ_df, [1], [2,3],1000)
 ```
 
 """
-function compute_saddle(integ, bsn_nfo::basin_info, bas_A, bas_B; N=100, init_tol = 1e-6)
+function compute_saddle(integ, bsn_nfo::BasinInfo, bas_A, bas_B; N=100, init_tol = 1e-6)
 
     # shortcut functions
     function get_col(u0)

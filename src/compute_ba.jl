@@ -1,6 +1,6 @@
 PoincareMap = ChaosTools.PoincareMap
 
-mutable struct basin_info{I,F,V}
+mutable struct BasinInfo{I,F,V}
     basin :: I
     xg :: F
     yg :: F
@@ -20,7 +20,7 @@ mutable struct basin_info{I,F,V}
     Na :: Int64
 end
 
-function Base.show(io::IO, bsn::basin_info)
+function Base.show(io::IO, bsn::BasinInfo)
     println(io, "Basin of attraction structure")
     println(io,  rpad(" size : ", 14),    size(bsn.basin))
     println(io,  rpad(" Number of attractors found: ", 14),   bsn.Na  )
@@ -135,7 +135,7 @@ end
 # The idea is to color the grid with the current color. When an attractor box is hit (even color), the initial condition is colored
 # with the color of its basin (odd color). If the trajectory hits another basin 10 times in row the IC is colored with the same
 # color as this basin.
-function procedure!(bsn_nfo::basin_info, n::Int, m::Int, u, Ncheck::Int)
+function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
     max_check = 60
     next_c = bsn_nfo.basin[n,m]
     bsn_nfo.step += 1
@@ -256,7 +256,7 @@ function draw_basin!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_
 
     complete = 0;
 
-    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,[],0)
+    bsn_nfo = BasinInfo(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,[],0)
 
     reset_bsn_nfo!(bsn_nfo)
 
@@ -287,7 +287,7 @@ end
 
 
 
-function get_color_point!(bsn_nfo::basin_info, integ, u0; Ncheck=2)
+function get_color_point!(bsn_nfo::BasinInfo, integ, u0; Ncheck=2)
     # This routine identifies the attractor using the previously defined basin.
     # reinitialize integrator
     bsn_nfo.reinit_f!(integ, u0)
@@ -322,7 +322,7 @@ end
 
 
 
-function get_box(u, bsn_nfo::basin_info)
+function get_box(u, bsn_nfo::BasinInfo)
     xg = bsn_nfo.xg; yg = bsn_nfo.yg; # aliases
     xstep = (xg[2]-xg[1])
     ystep = (yg[2]-yg[1])
@@ -342,7 +342,7 @@ function get_box(u, bsn_nfo::basin_info)
 end
 
 
-function check_outside_the_screen!(bsn_nfo::basin_info, new_u, old_u, inlimbo)
+function check_outside_the_screen!(bsn_nfo::BasinInfo, new_u, old_u, inlimbo)
 
     if norm(new_u-old_u) < 1e-5
         #println("Got stuck somewhere, Maybe an attractor outside the screen: ", new_u)
@@ -363,7 +363,7 @@ function check_outside_the_screen!(bsn_nfo::basin_info, new_u, old_u, inlimbo)
 end
 
 
-function reset_bsn_nfo!(bsn_nfo::basin_info)
+function reset_bsn_nfo!(bsn_nfo::BasinInfo)
     #@show bsn_nfo.step
     bsn_nfo.consecutive_match = 0
     bsn_nfo.consecutive_other_basins = 0
