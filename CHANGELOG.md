@@ -1,4 +1,9 @@
-#0.5.0
+# 0.6.0
+* Changes name for basin struct.
+* add uncertainty exponent estimator
+* More examples.
+
+# 0.5.0
 * Simplified method for basins.
 * fix tests.
 * More examples.

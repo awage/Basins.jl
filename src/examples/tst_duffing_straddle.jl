@@ -4,18 +4,18 @@ using Plots
 using DynamicalSystems
 using DifferentialEquations
 
-
-
-ω=1.
-F = 0.2
-ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
-integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-xg = range(-2.2,2.2,length=150)
-yg = range(-2.2,2.2,length=150)
-
-@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
-
-sa,sb = compute_saddle(integ_df, bsn, [1], [2]; N=1000)
+#
+#
+# ω=1.
+# F = 0.2
+# ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
+# integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+# xg = range(-2.2,2.2,length=150)
+# yg = range(-2.2,2.2,length=150)
+#
+# @time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+#
+# sa,sb = compute_saddle(integ_df, bsn, [1], [2]; N=1000)
 
 # plot(xg,yg,bsn.basin', seriestype=:heatmap)
 # s = Dataset(sa)
@@ -73,7 +73,7 @@ yg = range(-2.,4.,length=yres)
 
 Na = length(unique(bsn.basin))
 
-sa,sb = compute_saddle(integ_df, bsn, [1], [2,3]; N=10000)
+sa,sb = compute_saddle(integ_df, bsn, [1], [2,3]; N=1000)
 
 plot(xg,yg,bsn.basin', seriestype=:heatmap)
 s = Dataset(sa)

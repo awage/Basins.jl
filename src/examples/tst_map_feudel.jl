@@ -5,36 +5,49 @@ using Plots
 
 
 
-
 # Basin bifurcation in quasiperiodically forced systems Ulrike Feudel, Annette Witt, Ying-Cheng Lai, and Celso Grebogi PRE 28, 1998
-function chaotic_map(dz,z, p, n)
-
-    xn = z[1]; θ = z[2]
-    a=p[1]; ω = (sqrt(5.)-1.)/2.; r=p[2]
-    f(x)=r*x*(1. - x)
-    M(x)=f(f(f(x)))
-    dz[1]=M(xn)+a*cos(2*π*θ)
-    dz[2]=mod(θ + ω, 1.)
+function chaotic_map(dz, z, p, n)
+    xn = z[1]
+    θ = z[2]
+    a = p[1]
+    ω = (sqrt(5.0) - 1.0) / 2.0
+    r = p[2]
+    f(x) = r * x * (1.0 - x)
+    Mn(n) = reduce(∘, fill(f, n))
+    M = Mn(3)
+    dz[1] = M(xn) + a * cos(2 * π * θ)
+    dz[2] = mod(θ + ω, 1.0)
     return
 end
 
 # dummy function to keep the initializator happy
-function chaotic_map_J(J,z0, p, n)
-   return
+function chaotic_map_J(J, z0, p, n)
+    return
 end
-ds = DiscreteDynamicalSystem(chaotic_map,[1., 0.], [0.0015, 3.833] , chaotic_map_J)
-integ  = integrator(ds)
+ds = DiscreteDynamicalSystem(
+    chaotic_map,
+    [1.0, 0.0],
+    [0.0015, 3.833],
+    chaotic_map_J,
+)
+integ = integrator(ds)
 
 
-θ=range(0.,1.,length=200)
-xg=range(0.,1.,length=200)
-integ.p[2]=3.846
-integ.p[1] = 0.0024
+θ = range(0.0, 1.0, length = 250)
+xg = range(0.0, 1.0, length = 250)
+integ.p[2] = 3.833
+integ.p[1] = 0.0015
 
-@time bsn=Basins.basin_map(xg, θ, integ)
+@time bsn = Basins.basin_map(xg, θ, integ)
 #@time bsn=Basins.basin_general_ds(xg, θ, integ; dt=1, Ncheck=10)
 
-plot(θ,xg,bsn.basin, seriestype=:heatmap)
+@show bd = box_counting_dim(xg, θ, bsn)
+#@show α = 2 - bd
+
+D = uncertainty_exponent(bsn, integ)
+@show 2-D
+
+plot(θ, xg, bsn.basin, seriestype = :heatmap)
 
 #
 # u0=[0.5, 0.];
@@ -107,12 +120,13 @@ plot(θ,xg,bsn.basin, seriestype=:heatmap)
 # Value in the paper is α=0.07
 # But the basins are not reproductible. At least not with this method
 #plot(θ,xg,bsn.basin, seriestype=:heatmap)
-
-
-#sa,sb = compute_saddle(integ, bsn, [1], [2,3]; N=1000)
-
-# r=3.846
+#
+#
+# r=3.7
 # f(x)=r*x*(1-x)
-# M(x)=f(f(f(x)))
-# n=0:0.01:1
-# plot(n,M.(n)); plot!([0,1],[0,1])
+# Mn(n) = reduce(∘, fill(f, n))
+# fnn = Mn(4)
+# x=0:0.01:1
+# plot(x,fnn.(x))
+# plot!([0,1],[0,1])
+#

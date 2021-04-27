@@ -16,17 +16,17 @@ end
 F = 0.395
 ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-xg = range(-2.2,2.2,length=200)
-yg = range(-2.2,2.2,length=200)
+xg = range(-2.2,2.2,length=150)
+yg = range(-2.2,2.2,length=150)
 
 
-@time bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
+@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
-@show Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
+@show Sb,Sbb = basin_entropy(bsn; eps_x=20, eps_y=20)
 
 # Wada merge Haussdorff distances
-@time max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn.basin)
+@time max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn)
 epsilon = xg[2]-xg[1]
 @show dmax = max_dist/epsilon
 @show dmin = min_dist/epsilon
@@ -36,8 +36,11 @@ W = detect_wada_grid_method(integ_df, bsn; max_iter=8)
 @show W[:,end]
 
 # Uncertainty exponent for these parameter and grid
-bd = box_counting_dim(xg, yg, bsn.basin)
+bd = box_counting_dim(xg, yg, bsn)
 α = 2 - bd
+
+D = uncertainty_exponent(bsn, integ_df)
+@show 2-D
 
 println("---------------")
 println("---------------")
@@ -49,8 +52,8 @@ println("---------------")
 @printf("Boundary Basin Entropy: %.2f\n", Sbb)
 @printf("Uncertainty exponent: α= %.2f\n", α )
 @printf("Box counting dim: bd= %.2f\n", bd)
-
-@printf("Number of basins: %d\n", length(unique(basin)))
+@printf("Uncertainty dim estimator: d = %.2f\n", 2-D[1])
+@printf("Number of basins: %d\n", bsn.Na)
 @printf("Merge Method: Max fattening parameter: %.2f\n", dmax)
 @printf("Wada Grid Method: W_Na = %.2f\n ", W[end,end] )
 

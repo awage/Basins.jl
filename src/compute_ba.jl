@@ -17,12 +17,13 @@ mutable struct basin_info{I,F,V}
     prev_step :: Int64
     step :: Int64
     attractors :: V
+    Na :: Int64
 end
 
 function Base.show(io::IO, bsn::basin_info)
     println(io, "Basin of attraction structure")
     println(io,  rpad(" size : ", 14),    size(bsn.basin))
-    println(io,  rpad(" Number of attractors found: ", 14),   Int((bsn.current_color-2)/2)  )
+    println(io,  rpad(" Number of attractors found: ", 14),   bsn.Na  )
 end
 
 
@@ -255,7 +256,7 @@ function draw_basin!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_
 
     complete = 0;
 
-    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,[])
+    bsn_nfo = basin_info(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,[],0)
 
     reset_bsn_nfo!(bsn_nfo)
 
@@ -278,6 +279,8 @@ function draw_basin!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_
 
          bsn_nfo.basin[ni,mi] = get_color_point!(bsn_nfo, integ, u0; Ncheck=Ncheck)
     end
+
+    bsn_nfo.Na = Int((bsn_nfo.current_color-2)/2)
 
     return bsn_nfo
 end
