@@ -16,10 +16,10 @@ export basin_stability, uncertainty_exponent
 
 export compute_saddle,compute_basin_precise
 # Write your package code here.
-include("compute_ba.jl")
-include("compute_be.jl")
-include("compute_uncertain_dim.jl")
-include("compute_wada.jl")
+include("basins_attraction.jl")
+include("basin_entropy.jl")
+include("uncertain_dim.jl")
+include("wada_detection.jl")
 include("straddle.jl")
 
 end

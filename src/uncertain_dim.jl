@@ -22,13 +22,10 @@ function box_counting_dim(xg, yg, basin; kwargs...)
 end
 
 function box_counting_dim(xg, yg, bsn::BasinInfo; kwargs...)
-
     ind  = findall(iseven.(bsn.basin) .== true)
     basin_test = deepcopy(bsn.basin)
-    [basin_test[k] =basin_test[k]+1 for k in ind ]
-
+    for k in ind; basin_test[k] = basin_test[k]+1; end
     return box_counting_dim(xg, yg, basin_test; kwargs...)
-
 end
 
 
