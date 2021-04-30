@@ -270,17 +270,16 @@ end
     epsilon = xg[2]-xg[1]
     dmax = max_dist/epsilon
     dmin = min_dist/epsilon
-    @test (round(dmax) == 6.)
-    @test (round(dmin) == 2.)
+    @test (round(dmax) == 8.)
+    @test (round(dmin) == 4.)
 
     W = detect_wada_grid_method(integ, bsn; max_iter=5)
-    @test abs(trunc(W[3];digits=2) - 0.93) < 0.01
+    @test abs(trunc(W[3];digits=2) - 0.96) < 0.01
 
 end
 
 
 @testset "Test basin_stability" begin
-
     ω=1.; F = 0.2
     ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)

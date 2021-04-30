@@ -1,3 +1,6 @@
+# 0.6.1 
+* Improved boundary detection with thresholding.
+
 # 0.6.0
 * Changes name for basin struct.
 * add uncertainty exponent estimator
