@@ -1,7 +1,7 @@
 
 """
     basin_entropy(basin; eps_x=20, eps_y=20)
-This algorith computes the basin entropy of a computed basin of attraction on a regular grid.
+This algorithm computes the basin entropy of a computed basin of attraction on a regular grid.
 The function return the basin entropy and the boundary basin entropy.
 
 [A. Daza, A. Wagemakers, B. Georgeot, D. Guéry-Odelin and M. A. F. Sanjuán, Basin entropy:
@@ -30,9 +30,8 @@ function basin_entropy(basin; eps_x=20, eps_y=20)
             box_values=[basin[k,m] for k in x_coor, m in y_coor]
             N=N+1
             for (k,v) in enumerate(vals)
-                pn[k]=count(x->x==Float64(v),box_values)/length(box_values)
+                pn[k]=count(x->x==v,box_values)/length(box_values)
             end
-            #push!(p0,pn[1])
             Nb = Nb + (length(unique(box_values))>1)
             Sb = Sb + sum(entropy.(pn))
         end
@@ -42,7 +41,7 @@ end
 
 
 function entropy(p::Float64)
-    if p == 0
+    if p == 0.
         h = 0.
     else
         h=p*log(1/p)
@@ -52,14 +51,16 @@ end
 
 function basin_entropy(bsn::BasinInfo; eps_x=20, eps_y=20)
     ind  = findall(iseven.(bsn.basin) .== true)
+    # Not sure it is necessary to deepcopy
     basin_test = deepcopy(bsn.basin)
-    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    # Remove attractors from the picture
+    for k in ind; basin_test[k] = basin_test[k]+1; end
     basin_entropy(basin_test; eps_x=eps_x, eps_y=eps_y)
 end
 
 """
     basin_stability(basin)
-This algorith computes the basin stability of a computed basin of attraction on a regular grid.
+This algorithm computes the basin stability of a computed basin of attraction on a regular grid.
 This function returns a vector with the relative volume of the basins.
 
 [P. Menck, J. Heitzig, N. Marwan et al. How basin stability complements the linear-stability paradigm. Nature Phys 9, 89–92 (2013).]
@@ -84,7 +85,53 @@ end
 
 function basin_stability(bsn::BasinInfo)
     ind  = findall(iseven.(bsn.basin) .== true)
+    # Not sure it is necessary to deepcopy
     basin_test = deepcopy(bsn.basin)
-    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    # Remove attractors from the picture
+    for k in ind; basin_test[k] = basin_test[k]+1; end
     return basin_stability(basin_test)
+end
+
+
+
+"""
+    fractal_test(bsn::BasinInfo)
+
+## Arguments
+* `bsn` :
+
+## Keyword arguments
+*
+
+"""
+function fractal_test(bsn::BasinInfo)
+
+# disk radius
+εₕ=5
+
+# Sanity check.
+if length(bsn.xg)/εₕ < 50
+    @warn "Maybe the size of the grid is not fine enough."
+end
+
+nx = length(bsn.xg)
+ny = length(bsn.yg)
+xi=bsn.xg[1]; xf=bsn.xg[end]; yi=bsn.yg[1]; yf=bsn.yg[end];
+
+
+# Now get the values in the boxes.
+while Nb < 1e4
+
+x = rand()*(xf-xi)+xi
+y = rand()*(yf-yi)+yi
+ind = find_in_range(x,y,εₕ)
+
+end
+
+
+end
+
+function find_in_range(x,y,εₕ)
+
+
 end

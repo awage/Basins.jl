@@ -4,10 +4,13 @@ function get_boundary_filt(basin)
     # Kernel
     w = centered([1 1 1; 1 -8 1 ; 1 1 1])
     # replicate for boundary conditions
-    res =imfilter(basin,w,"replicate")
-    # segmentation
-    return abs.(res) .> 0
+    res = imfilter(basin,w,"replicate")
 
+    # segmentation: take a low threshold in order to not loose some structure.
+    # This detection can be improved.
+    res = abs.(res) .> 4
+
+    return res
 end
 
 function get_list(basin,xg ,yg)

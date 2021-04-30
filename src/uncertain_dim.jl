@@ -1,4 +1,3 @@
-
 """
     box_counting_dim(xg, yg, basin; kwargs...)
 This function compute the box-counting dimension of the boundary. It is related to the uncertainty dimension.
@@ -14,16 +13,19 @@ This function compute the box-counting dimension of the boundary. It is related 
 
 """
 function box_counting_dim(xg, yg, basin; kwargs...)
+    # get points coordinates in the boudary
     bnd = get_boundary_filt(basin)
     I1 = findall(bnd .== 1);
-    v = hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...)
-    v = Dataset(v')
+    v = Dataset{2,eltype(xg)}()
+    for  ind in I1; push!(v, [xg[ind[1]] , yg[ind[2]]]); end;
     return generalized_dim(v; q=0, kwargs...)
 end
 
 function box_counting_dim(xg, yg, bsn::BasinInfo; kwargs...)
     ind  = findall(iseven.(bsn.basin) .== true)
+    # Not sure it is necessary to deepcopy
     basin_test = deepcopy(bsn.basin)
+    # Remove attractors from the picture
     for k in ind; basin_test[k] = basin_test[k]+1; end
     return box_counting_dim(xg, yg, basin_test; kwargs...)
 end
