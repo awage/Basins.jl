@@ -1,3 +1,6 @@
+# 0.7.1
+* bugfix
+
 # 0.7.0
 * Changed interface
 * Improve speed and allocations

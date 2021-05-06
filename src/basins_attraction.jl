@@ -179,7 +179,11 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
         # Maybe chaotic attractor, perodic or long recursion.
         # Color this box as part of an attractor
         bsn_nfo.basin[n,m] = bsn_nfo.current_color
-        push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
+        if haskey(bsn_nfo.attractors , bsn_nfo.current_color)
+            push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
+        else
+            bsn_nfo.attractors[bsn_nfo.current_color] = Dataset([SVector(u[1],u[2])])  # init dic
+        end
         bsn_nfo.consecutive_match = max_check
         #println("1 y > max_check")
         return 0

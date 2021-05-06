@@ -12,8 +12,8 @@ using DifferentialEquations
     return SVector{2}(du1, du2)
 end
 
-#ω=0.1617;F = 0.395
-ω=0.1;F = 0.403356
+ω=0.1617;F = 0.395
+#ω=0.1;F = 0.403356
 ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=300)
