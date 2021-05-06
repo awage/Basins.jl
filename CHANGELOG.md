@@ -1,4 +1,8 @@
-# 0.6.1 
+# 0.7.0
+* Changed interface
+* Improve speed and allocations
+
+# 0.6.1
 * Improved boundary detection with thresholding.
 
 # 0.6.0
