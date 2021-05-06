@@ -27,5 +27,5 @@ yg=range(0.5,1.,length=100)
 
 # compute basin
 
-@time basin=basin_map(xg, yg, integ)
+@time basin=basins_map2D(xg, yg, integ)
 plot(xg,yg,basin',seriestype=:heatmap)

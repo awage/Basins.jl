@@ -134,7 +134,7 @@ function compute_saddle(integ, bsn_nfo::BasinInfo, bas_A, bas_B; N=100, init_tol
         return iseven(a) ? Int(a/2) : Int((a-1)/2)
     end
 
-    Na = length(unique(bsn_nfo.basin))/2
+    Na = bsn_nfo.Na
     # basic check
     if (Set(bas_A) ∪ Set(bas_B)) != Set(collect(1:Na))
         @error "Generalized basins are not well defined"
@@ -152,15 +152,10 @@ function compute_saddle(integ, bsn_nfo::BasinInfo, bas_A, bas_B; N=100, init_tol
 
     # Set initial condition near attractors of the selected basins.
     u_A = u_B = [0., 0.]
-    for p in bsn_nfo.attractors
-        @show  p
-        if p[1] == bas_A[1]
-            u_A = [p[2],p[3]]
-        end
-        if p[1] == bas_B[1]
-            u_B = [p[2],p[3]]
-        end
-    end
+    v = bsn_nfo.attractors[bas_A[1]*2]
+    u_A = v[1]
+    v = bsn_nfo.attractors[bas_B[1]*2]
+    u_B = v[1]
 
 
     saddle_series_A = Array{typeof(u_A),1}(undef, N)

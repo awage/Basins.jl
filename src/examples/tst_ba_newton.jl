@@ -23,10 +23,10 @@ end
 ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [3] , newton_map_J)
 integ  = integrator(ds)
 
-xg=range(-1.5,1.5,length=200)
-yg=range(-1.5,1.5,length=200)
+xg=range(-1.5,1.5,length=100)
+yg=range(-1.5,1.5,length=100)
 
-@time bsn=basin_map(xg, yg, integ)
+@time bsn=Basins.basins_map2D(xg, yg, integ)
 
 plot(xg,yg,bsn.basin',seriestype=:heatmap)
 

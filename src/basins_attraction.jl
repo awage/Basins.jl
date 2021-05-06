@@ -1,6 +1,6 @@
 PoincareMap = ChaosTools.PoincareMap
 
-mutable struct BasinInfo{I,F,V}
+mutable struct BasinInfo{I,F,D}
     basin :: I
     xg :: F
     yg :: F
@@ -16,7 +16,7 @@ mutable struct BasinInfo{I,F,V}
     prev_bas :: Int64
     prev_step :: Int64
     step :: Int64
-    attractors :: V
+    attractors :: D #Dict{Int16,Vector{Vector{Float64}}}
     Na :: Int64
 end
 
@@ -28,7 +28,7 @@ end
 
 
 """
-    basin_map(xg, yg, integ; kwargs...)
+    basins_map2D(xg, yg, integ; kwargs...)
 Compute an estimate of the basin of attraction on a two-dimensional plane using a map of the plane onto itself.
 The dynamical system should be a discrete two dimensional system such as:
     * Discrete 2D map.
@@ -55,11 +55,11 @@ using DynamicalSystems, ChaosTools
 ds = Systems.rikitake(μ = 0.47, α = 1.0)
 xg=range(-6.,6.,length=150); yg=range(-6.,6.,length=150)
 pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
-bsn = basin_map(xg, yg, pmap)
+bsn = basins_map2D(xg, yg, pmap)
 ```
 
 """
-function basin_map(xg, yg, pmap::PoincareMap; Ncheck = 2)
+function basins_map2D(xg, yg, pmap::PoincareMap; Ncheck = 3)
     reinit_f! = (pmap,y) -> _init_map(pmap, y, pmap.i)
     get_u = (pmap) -> pmap.integ.u[pmap.i]
     basin = draw_basin!(xg, yg, pmap, step!, reinit_f!, get_u, Ncheck)
@@ -74,7 +74,7 @@ function _init_map(pmap::PoincareMap, y, idxs)
 end
 
 
-function basin_map(xg, yg, integ; T=0., Ncheck = 2)
+function basins_map2D(xg, yg, integ; T=0., Ncheck = 2)
     if T>0
         iter_f! = (integ) -> step!(integ, T, true)
     else
@@ -92,7 +92,7 @@ end
 
 
 """
-    basin_general(xg, yg, integ; T=1., idxs=1:2)
+    basins_general(xg, yg, integ; T=1., idxs=1:2)
 Compute an estimate of the basin of attraction on a two-dimensional plane using a stroboscopic map.
 
 ## Arguments
@@ -112,9 +112,9 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.2, α=0.2, ω=0.8, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-9)
 xg=range(-4,4,length=150)
 yg=range(-4,4,length=150)
-@time bsn = basin_general_ds(xg, yg, integ; dt=1., idxs=1:2)
+@time bsn = basins_general(xg, yg, integ; dt=1., idxs=1:2)
 """
-function basin_general_ds(xg, yg, integ; dt=1., idxs=1:2, Ncheck = 10)
+function basins_general(xg, yg, integ; dt=1., idxs=1:2, Ncheck = 10)
     i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
     iter_f! = (integ) -> step!(integ, dt, true)
     reinit_f! =  (integ,y) -> _init_ds(integ, y, i)
@@ -131,7 +131,7 @@ function _init_ds(integ, y, idxs)
 end
 
 
-## Procedure described in  H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012
+## Procedure described in  H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 1997
 # The idea is to color the grid with the current color. When an attractor box is hit (even color), the initial condition is colored
 # with the color of its basin (odd color). If the trajectory hits another basin 10 times in row the IC is colored with the same
 # color as this basin.
@@ -160,10 +160,10 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
             if Ncheck == 2
                 # For maps we can color the previous steps as well. Every point of the trajectory lead
                 # to the attractor
-                [ bsn_nfo.basin[k[1],k[2]] = c3  for k in ind]
+                for k in ind; bsn_nfo.basin[k[1],k[2]] = c3; end
             else
                 # For higher dimensions we erase the past iterations.
-                [ bsn_nfo.basin[k[1],k[2]] = 1  for k in ind] # erase visited boxes
+                for k in ind; bsn_nfo.basin[k[1],k[2]] = 1; end # erase visited boxes
             end
             reset_bsn_nfo!(bsn_nfo)
             return c3
@@ -179,7 +179,7 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
         # Maybe chaotic attractor, perodic or long recursion.
         # Color this box as part of an attractor
         bsn_nfo.basin[n,m] = bsn_nfo.current_color
-        push!(bsn_nfo.attractors, [bsn_nfo.current_color/2, u...]) # store attractor
+        push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
         bsn_nfo.consecutive_match = max_check
         #println("1 y > max_check")
         return 0
@@ -191,7 +191,11 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
         else
             #println("got attractor")
             bsn_nfo.basin[n,m] = bsn_nfo.current_color
-            push!(bsn_nfo.attractors, [bsn_nfo.current_color/2, u...]) # store attractor
+            if haskey(bsn_nfo.attractors , bsn_nfo.current_color)
+                push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
+            else
+                bsn_nfo.attractors[bsn_nfo.current_color] = Dataset([SVector(u[1],u[2])])  # init dic
+            end
             # We continue iterating until we hit again the same attractor. In which case we stop.
             return 0;
         end
@@ -211,7 +215,7 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
 
         if bsn_nfo.consecutive_other_basins > 60 || bsn_nfo.prevConsecutives > 10
             ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-            [bsn_nfo.basin[k[1],k[2]] = next_c for k in ind]
+            for k in ind; bsn_nfo.basin[k[1],k[2]] = next_c; end
             reset_bsn_nfo!(bsn_nfo)
             return next_c
         end
@@ -223,12 +227,11 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
     elseif iseven(next_c) && bsn_nfo.consecutive_match >= max_check*2
         # We have checked the presence of an attractor: tidy up everything and get a new box.
         ind = findall(bsn_nfo.basin .== bsn_nfo.current_color+1)
-        [ bsn_nfo.basin[k[1],k[2]] = 1 for k in ind]
+        for k in ind; bsn_nfo.basin[k[1],k[2]] = 1; end
 
-        # store color
-        bsn_nfo.basin[n,m] = bsn_nfo.current_color
-        push!(bsn_nfo.attractors, [bsn_nfo.current_color/2, u...]) # store attractor
 
+        bsn_nfo.basin[n,m] = bsn_nfo.current_color           # store color
+        push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
         bsn_nfo.current_color = bsn_nfo.next_avail_color
         bsn_nfo.next_avail_color += 2
         #println("even and > max check ", next_c)
@@ -256,19 +259,31 @@ function draw_basin!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_
 
     complete = 0;
 
-    bsn_nfo = BasinInfo(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,[],0)
+    bsn_nfo = BasinInfo(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,Dict{Int16,Dataset{2,Float64}}(),0)
 
     reset_bsn_nfo!(bsn_nfo)
 
-    while complete == 0
-         # pick the first empty box
-         get_empt_box = findall(bsn_nfo.basin .== 1)
-         if length(get_empt_box) == 0
-             complete = 1
-             break
-         end
+    I = CartesianIndices(bsn_nfo.basin)
+    j  = 1
 
-         ni = get_empt_box[1][1]; mi = get_empt_box[1][2]
+    while complete == 0
+        # pick the first empty box
+        ind = 0
+        for k in j:length(bsn_nfo.basin)
+            if bsn_nfo.basin[I[k]] == 1
+                j = k
+                ind=I[k]
+                break
+            end
+        end
+
+        if ind == 0
+            # We are done
+            complete = 1
+            break
+        end
+
+         ni = ind[1]; mi = ind[2];
          x0 = xg[ni]; y0 = yg[mi]
 
          # Tentatively assign a color: odd is for basins, even for attractors.

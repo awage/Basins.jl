@@ -28,7 +28,7 @@ First define a dynamical system on the plane, for example with a *stroboscopic* 
 
 ```jl
 using Basins, DynamicalSystems, DifferentialEquations
-ω=1.; F = 0.2
+ω=1.; F=0.2
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 ```
@@ -38,7 +38,7 @@ Now we define the grid of ICs that we want to analyze and launch the procedure:
 ```jl
 xg = range(-2.2,2.2,length=200)
 yg = range(-2.2,2.2,length=200)
-bsn=basin_map(xg, yg, integ; T=2π/ω)
+bsn=basins_map2D(xg, yg, integ; T=2π/ω)
 ```
 
 The keyword arguments are:
@@ -168,7 +168,6 @@ the general method for higher dimensions. It is slower and may requires some tun
 looks for atractors on a 2D grid. The initial conditions are set on this grid and all others variables
 are set to zero by default.
 
-
 ### Usage
 
 ```jl
@@ -176,7 +175,7 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.2, α=0.2, ω=0.8, N=3)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-9)
 xg=range(-4,4,length=150)
 yg=range(-4,4,length=150)
-@time bsn = basin_general_ds(xg, yg, integ; dt=1., idxs=1:2)
+@time bsn = basins_general(xg, yg, integ; dt=1., idxs=1:2)
 ```
 
 Keyword parameters are:
@@ -189,20 +188,28 @@ depending on this time step.
 
 ### 1.5 - Notes about the method
 
-The algorithm search for the attractors on the grid and then identify the "color" of the
-initial condition with two basic methods:
-* a) The trajectory hits an attractor: case solved
-* b)  The trajectory hits several already colored boxes with the same color in a row: we color our box with the same color.
+This method identifies the attractors and their basins of attraction on the grid without prior knowledge about the
+system. At the end of a successfull computation the function returns a structure BasinInfo with usefull information
+on the basin defined by the grid (`xg`,`yg`). There is an important member named `basin` that contains the estimation
+of the basins and also of the attractors. For its content see the following section `Structure of the basin`.
 
-This method is at worst as fast as tracking the attractors. In the best cases there is a signicative improvement.
+From now on we will refer to the final attractor or an initial condition to its *number*, *odd numbers* are assigned
+to basins and *even numbers* are assigned to attractors. The method starts by picking the first available initial
+condition not yet numbered. The dynamical system is then iterated until one of the following condition happens:
+* The trajectory hits a known attractor already numbered: the initial condition is collored with corresponding odd number.
+* The trajectory diverges or hits an attractor outside the defined grid: the initial condition is set to -1
+* The trajectory hits a known basins 10 times in a row: the initial condition belongs to that basin and is numbered accordingly.
+* The trajectory hits 60 times in a row an unnumbered cell: it is considered an attractor and is labelled with a even number.
+
+Regarding performace, this method is at worst as fast as tracking the attractors. In most cases there is a signicative improvement
+in speed.
 
 ### Structure of the basin:
 
 The basin of attraction is organized in the followin way:
-
-* The atractors are even numbers in the matrix.
-* The basins corresponding the attractor n is numbered n+1.
-* If the trajectory diverges or converge to an atractor outside the defined grid it is labeled -1
+* The atractors points are *even numbers* in the matrix. For example, 2 and 4 refer to distinct attractors.
+* The basins are collored with *odd numbers*, `2n+1` corresponding the attractor `2n`.
+* If the trajectory diverges or converge to an atractor outside the defined grid it is numbered -1
 
 ## 2 - Computataion of the Basin Entropy
 
@@ -218,7 +225,7 @@ using Basins, DynamicalSystems, DifferentialEquations
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
+bsn = basins_map2D(xg, yg, integ_df; T=2*pi/ω)
 
 Sb,Sbb = basin_entropy(bsn; eps_x=20, eps_y=20)
 ```
@@ -240,7 +247,7 @@ using Basins, DynamicalSystems, DifferentialEquations
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
+bsn = basins_map2D(xg, yg, integ_df; T=2*pi/ω)
 
 bd = box_counting_dim(xg, yg, bsn)
 
@@ -283,7 +290,7 @@ cb = DiscreteCallback(condition,affect!)
 F = 1.66; ω = 1.; d=0.2
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
 integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
-bsn = basin_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
+bsn = basins_map2D(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
 
 max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn)
 # grid resolution
@@ -324,7 +331,7 @@ cb = DiscreteCallback(condition,affect!)
 F = 1.66; ω = 1.; d=0.2
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
 integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
-bsn = basin_map(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
+bsn = basins_map2D(range(-pi,pi,length=100), range(-2.,4.,length=100), integ; T=2*pi/ω)
 
 @show W = detect_wada_grid_method(integ, bsn; max_iter=10)
 ```
@@ -364,7 +371,7 @@ cb = DiscreteCallback(condition,affect!)
 F = 1.66; ω = 1.; d=0.2
 df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
 integ = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, abstol=1e-9, save_everystep=false, callback=cb)
-bsn = basin_map(range(-pi,pi,length=200), range(-2.,4.,length=200), integ; T=2*pi/ω)
+bsn = basins_map2D(range(-pi,pi,length=200), range(-2.,4.,length=200), integ; T=2*pi/ω)
 
 # sa is the left set and sb is the right set.
 sa,sb = compute_saddle(integ, bsn, [1], [2,3], 1000)
@@ -376,7 +383,7 @@ plot!(s[:,1],s[:,2],seriestype=:scatter, markercolor=:blue)
 
 The arguments of `compute_saddle` are:
 * `integ` : the matrix containing the information of the basin.
-* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_map` or `basin_poincare_map`.
+* `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basins_map2D` or `basin_poincare_map`.
 * `bas_A` : vector with the indices of the attractors that will represent the generalized basin A
 * `bas_B` : vector with the indices of the attractors that will represent the generalized basin B. Notice that `bas_A ∪ bas_B = [1:N]` and `bas_A ∩ bas_B = ∅`
 
@@ -399,7 +406,7 @@ using Basins, DynamicalSystems, DifferentialEquations
 ds =Systems.duffing([0.1, 0.25]; ω = ω, f = F, d = 0.15, β = -1)
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=200); yg = range(-2.2,2.2,length=200)
-bsn = basin_map(xg, yg, integ_df; T=2*pi/ω)
+bsn = basins_map2D(xg, yg, integ_df; T=2*pi/ω)
 
 @show basin_stability(bsn)
 ```

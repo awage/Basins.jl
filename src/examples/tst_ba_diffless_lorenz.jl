@@ -21,7 +21,7 @@ ds = ContinuousDynamicalSystem(dl_lorenz, rand(3), p)
 xg=range(-10.,10.,length=400)
 yg=range(-10.,10.,length=400)
 pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-12, atol = 1e-12), reltol=1e-10, abstol=1e-10)
-@time bsn = Basins.basin_map(xg, yg, pmap; Ncheck=10)
+@time bsn = Basins.basins_map2D(xg, yg, pmap; Ncheck=10)
 #integ = integrator(ds, alg=Tsit5(), reltol=1e-9, abstol=1e-9, save_everystep=false)
 #@time bsn = Basins.basin_general_ds(xg, yg, integ; dt=2., idxs=1:2)
 

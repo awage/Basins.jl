@@ -28,6 +28,6 @@ yres=100
 xg = range(-2.,2.,length=xres)
 yg = range(-7.,7.,length=yres)
 
-@time basin = basin_map(xg, yg, integ; T=2π/ω)
+@time basin = Basins.basins_map2D(xg, yg, integ; T=2π/ω)
 
 plot(xg,yg,basin', seriestype=:heatmap)

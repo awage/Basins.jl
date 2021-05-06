@@ -21,10 +21,11 @@ end
 ds = DiscreteDynamicalSystem(coupled_logistic_maps,[1., -1., 0.], [] , coupled_logistic_maps_J)
 integ  = integrator(ds)
 
-xg=range(0.,0.999999,length=400)
-yg=range(0.,0.999999,length=400)
+xg=range(0.,0.999999,length=100)
+yg=range(0.,0.999999,length=100)
 
-@time bsn=Basins.basin_general_ds(xg, yg, integ; dt=1)
+@time bsn=Basins.basins_general(xg, yg, integ; dt=1)
+plot(xg,yg,bsn.basin',seriestype=:heatmap)
 
 # Estimation using box counting
 ind  = findall(iseven.(bsn.basin) .== true)

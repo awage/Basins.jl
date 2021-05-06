@@ -38,7 +38,7 @@ xg = range(0.0, 1.0, length = 250)
 integ.p[2] = 3.833
 integ.p[1] = 0.0015
 
-@time bsn = Basins.basin_map(xg, θ, integ)
+@time bsn = Basins.basins_map2D(xg, θ, integ)
 #@time bsn=Basins.basin_general_ds(xg, θ, integ; dt=1, Ncheck=10)
 
 @show bd = box_counting_dim(xg, θ, bsn)

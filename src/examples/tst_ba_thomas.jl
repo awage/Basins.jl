@@ -13,6 +13,6 @@ xg=range(-6.,6.,length=200)
 yg=range(-6.,6.,length=200)
 pmap = poincaremap(ds, (3, 0.), Tmax=1e6; idxs = 1:2, rootkw = (xrtol = 1e-8, atol = 1e-8), reltol=1e-9)
 
-@time bsn = Basins.basin_map(xg, yg, pmap, Ncheck=3)
+@time bsn = Basins.basins_map2D(xg, yg, pmap)
 
 plot(xg,yg,bsn.basin',seriestype=:heatmap)

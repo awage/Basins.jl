@@ -36,7 +36,7 @@ ds = Systems.magnetic_pendulum(γ=1, d=0.3, α=0.2, ω=0.5, N=4)
 integ = integrator(ds, u0=[0,0,0,0], reltol=1e-9)
 xg=range(-2,2,length=500)
 yg=range(-2,2,length=500)
-@time bsn = Basins.basin_general_ds(xg, yg, integ; dt=1., idxs=1:2)
+@time bsn = Basins.basins_general(xg, yg, integ; dt=1., idxs=1:2)
 
 
 # Uncertainty exponent for these parameter and grid

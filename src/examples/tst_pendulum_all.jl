@@ -26,7 +26,7 @@ end
 
 condition(u,t,integrator) = (integrator.u[1] < -π  || integrator.u[1] > π)
 
-cb = DiscreteCallback(condition,affect!)
+cb = DiscreteCallback(cbasins_map2Daffect!)
 
 #d, F ,w
 F = 1.66
@@ -45,7 +45,7 @@ xg = range(-pi,pi,length=xres)
 yg = range(-2.,4.,length=yres)
 
 # compute basin
-@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+@time bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(bsn; eps_x=20, eps_y=20)

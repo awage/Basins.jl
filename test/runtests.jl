@@ -210,7 +210,7 @@ using DifferentialEquations
     integ_df  = integrator(ds)
     xg = range(-2.,2.,length=100)
     yg = range(-2.,2.,length=100)
-    bsn = Basins.basin_map(xg, yg, integ_df)
+    bsn = Basins.basins_map2D(xg, yg, integ_df)
 
     # Compute boundary
     ind  = findall(iseven.(bsn.basin) .== true)
@@ -234,7 +234,7 @@ end
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=150)
     yg = range(-2.2,2.2,length=150)
-    bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+    bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
     Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
     @test (abs(trunc(Sb;digits=3) - 0.663) < 0.001)
     @test (abs(trunc(Sbb;digits=3) - 0.663) < 0.001)
@@ -262,7 +262,7 @@ end
     df = ODEProblem(forced_pendulum!,rand(2),(0.0,20.0), [d, F, ω])
     integ  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, save_everystep=false, callback=cb)
     xg = range(-pi,pi,length=100); yg = range(-2.,4.,length=100)
-    bsn = Basins.basin_map(xg, yg, integ; T=2*pi/ω)
+    bsn = Basins.basins_map2D(xg, yg, integ; T=2*pi/ω)
 
     # Wada merge Haussdorff distances
     # First remove attractors
@@ -285,7 +285,7 @@ end
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=150)
     yg = range(-2.2,2.2,length=150)
-    bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+    bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
     bs = basin_stability(bsn.basin)
     @test abs((trunc(bs[1];digits=3) - 0.492)) < 0.005
     @test abs((trunc(bs[2];digits=3) - 0.507)) < 0.005
@@ -298,7 +298,7 @@ end
     integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=150)
     yg = range(-2.2,2.2,length=150)
-    bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+    bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
     bd = box_counting_dim(xg, yg, bsn)
     @test abs((trunc(bd;digits=2) - 1.9))<0.1
 end
@@ -419,7 +419,7 @@ end
     integ_df  = integrator(ds; alg=AutoTsit5(Rosenbrock23()), reltol=1e-8, abstol=1e-8, save_everystep=false)
     xg = range(-2.2,2.2,length=200)
     yg = range(-2.2,2.2,length=200)
-    @time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+    @time bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
     sa,sb = compute_saddle(integ_df, bsn, [1], [2]; N=100)
     s = hcat(sa...)
     hd = Basins.haussdorff_dist(s,v)

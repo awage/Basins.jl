@@ -12,15 +12,15 @@ using DifferentialEquations
     return SVector{2}(du1, du2)
 end
 
-ω=0.1617
-F = 0.395
+#ω=0.1617;F = 0.395
+ω=0.1;F = 0.403356
 ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
 integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
-xg = range(-2.2,2.2,length=150)
-yg = range(-2.2,2.2,length=150)
+xg = range(-2.2,2.2,length=300)
+yg = range(-2.2,2.2,length=300)
 
 
-@time bsn = Basins.basin_map(xg, yg, integ_df; T=2*pi/ω)
+@time bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(bsn; eps_x=20, eps_y=20)
