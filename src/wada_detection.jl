@@ -1,15 +1,19 @@
 
 function get_boundary_filt(basin)
 
+    mx = maximum(basin)
+    mn = minimum(basin)
     # Kernel
     w = centered([1 1 1; 1 -8 1 ; 1 1 1])
+    #w = centered([0 1 0; 1 -4 1 ; 0 1 0])
+
     # replicate for boundary conditions
     res = imfilter(basin,w,"replicate")
 
     # segmentation: take a low threshold in order to not loose some structure.
     # This detection can be improved.
-    res = abs.(res) .> 4
-
+    #res = abs.(res) .> (mx-mn)
+    res = abs.(res) .> 0.
     return res
 end
 
@@ -68,7 +72,7 @@ epsilon = xg[2]-xg[1]
 function detect_wada_merge_method(xg,yg,bsn::BasinInfo)
     ind  = findall(iseven.(bsn.basin) .== true)
     basin_test = deepcopy(bsn.basin)
-    [basin_test[k] =basin_test[k]+1 for k in ind ]
+    for k in ind; basin_test[k] =basin_test[k]+1; end
     return detect_wada_merge_method(xg,yg,basin_test)
 end
 
@@ -147,7 +151,14 @@ The algorithm test for Wada basin in a dynamical system. It uses the dynamical s
 function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
 
    ds_nfo = ds_info(bsn_nfo, integ)
-   num_att = Int(length(unique(bsn_nfo.basin))/2)
+   num_att = bsn_nfo.Na
+
+   if findfirst(x->x==-1, bsn_nfo.basin) != nothing
+       @error "The basin contains escapes or undefined attractors, cannot test for Wada"
+       return nothing
+   end
+   
+
 
    # helper function to obtain coordinates
    index_to_coord(p) = [bsn_nfo.xg[p[1]], bsn_nfo.yg[p[2]]]

@@ -44,8 +44,8 @@ integ.p[1] = 0.0015
 @show bd = box_counting_dim(xg, θ, bsn)
 #@show α = 2 - bd
 
-D = uncertainty_exponent(bsn, integ)
-@show 2-D
+D,De,e,f = uncertainty_exponent(bsn, integ)
+println("uncertainty exponent: α=",D, " ± ",De)
 
 plot(θ, xg, bsn.basin, seriestype = :heatmap)
 

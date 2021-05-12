@@ -44,41 +44,44 @@ This function estimates the uncertainty exponent of the boundary. It is related 
 * `integ` : handle to the iterator of the dynamical system.
 
 ## Keyword arguments
-* `sizes` array that specifies the scales at which the uncertainty exponent should be computed.
+* `precision` variance of the estimator of the uncertainty function.
 
 """
-function uncertainty_exponent(bsn::BasinInfo, integ; sizes=0.)
+function uncertainty_exponent(bsn::BasinInfo, integ; precision=1e-3)
     xg = bsn.xg; yg = bsn.yg;
     nx=length(xg)
     ny=length(yg)
-    xi = xg[1]; xf = xg[end]; yi = yg[1];  yf = yg[end]
+    xi = xg[1]; xf = xg[end];
     grid_res_x=xg[2]-xg[1]
-    grid_res_y=yg[2]-yg[1]
+
+
+    # First we compute a crude estimate to have an idea at which resolution
+    D,e,f = static_estimate(xg,yg,bsn);
+    println("First estimate: α=",D)
+
+    # estimate the minimum resolution to estimate a f_ε ∼ 10^-3
+    @show min_ε = -3/D[1]
+
+    min_ε = max(min_ε,-7) # limit resolution to 10^-7 to avoid numerical inconsistencies.
 
     N_u = [] # number of uncertain box
     N = [] # number of boxes
     ε = [] # resolution
 
+    # resolution in log scale
+    #min_ε = -6;
+    max_ε = log10(grid_res_x*5);
+    num_step=10
 
-    min_ε = 1e-6;
-    max_ε = grid_res_x*5;
-    num_step=15
-    r,c= size(bsn.basin)
-    vals = sum(isodd.(unique(bsn.basin)))
-    S=Int16(vals)
-    if S < 2
-        return 1,0,0
-    end
-
-    r_ε = range(min_ε,max_ε,length=num_step)
+    r_ε = 10 .^ range(min_ε,max_ε,length=num_step)
 
     for (k,eps) in enumerate(r_ε)
         Nb=0; Nu=0; μ=0; σ²=0; M₂=0;
         completed = 0;
         # Find uncertain boxes
         while completed == 0
-            k1 = rand(1:length(xg))
-            k2 = rand(1:length(yg))
+            k1 = rand(1:nx)
+            k2 = rand(1:ny)
 
             c1 = bsn.basin[k1,k2]
             c2 = get_color_point!(bsn, integ, [xg[k1]+eps,yg[k2]])
@@ -89,15 +92,26 @@ function uncertainty_exponent(bsn::BasinInfo, integ; sizes=0.)
             end
             Nb += 1
 
-            # Welford's online mean and average estimation
+            # Welford's online average estimation and variance of the estimator
             M₂ = wel_var(M₂, μ, Nu/Nb, Nb)
             μ = wel_mean(μ, Nu/Nb, Nb)
             σ² = M₂/Nb
+            # If the process is binomial, the variance of the estimator is Nu/Nb·(1-Nu/Nb)/Nb (p·q/N)
+            # simulations matches
+            #push!(sig,Nu/Nb*(1-Nu/Nb)/Nb)
 
             # Stopping criterion: variance of the estimator of the mean bellow 1e-3
-            if Nb > 100 && σ² < 1e-3
+            if Nu > 50 && σ² < precision
                 completed = 1
-                #@show Nu,Nb
+                @show Nu,Nb,σ²
+            end
+
+            if Nu < 10 && Nb>10000
+                # skip this value, we don't find the boundary
+                # corresponds to roughly f_ε ∼ 10^-4
+                @warn "Resolution may be to small for this basin, skip value"
+                completed = 1
+                Nu = 0
             end
 
         end
@@ -109,12 +123,16 @@ function uncertainty_exponent(bsn::BasinInfo, integ; sizes=0.)
     # uncertain function
     f_ε = N_u./N
 
+    # remove zeros in case there are:
+    ind = f_ε .> 0
+    f_ε =  f_ε[ind]
+    ε = ε[ind]
     # get exponent
     @. model(x, p) = p[1]*x+p[2]
     fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
     D = coef(fit)
-
-    return D[1]
+    Dϵ = estimate_errors(fit)
+    return D[1], Dϵ[1], vec(log10.(ε)),vec(log10.(f_ε))
 end
 
 
@@ -128,4 +146,72 @@ end
 
 function wel_mean(μ, xₙ, n)
     return μ + (xₙ - μ)/n
+end
+
+
+function static_estimate(xg,yg,bsn)
+
+    xg = bsn.xg; yg = bsn.yg;
+    nx=length(xg)
+    ny=length(yg)
+
+    N_u = [] # number of uncertain box
+    N = [] # number of boxes
+    ε = [] # resolution
+
+    # resolution in log scale
+    min_ε = 1;
+    max_ε = 10;
+
+    r_ε = min_ε:max_ε
+
+    for (k,eps) in enumerate(r_ε)
+        Nb=0; Nu=0; μ=0; σ²=0; M₂=0;
+        completed = 0;
+        # Find uncertain boxes
+        while completed == 0
+            k1 = rand(1:nx)
+            k2 = rand(eps+1:ny-eps)
+
+
+            c1 = bsn.basin[k1,k2]
+            c2 = bsn.basin[k1,k2+eps]
+            c3 = bsn.basin[k1,k2-eps]
+
+            if length(unique([c1,Int(c2),Int(c3)]))>1
+                Nu = Nu + 1
+            end
+            Nb += 1
+
+            # Welford's online average estimation and variance of the estimator
+            M₂ = wel_var(M₂, μ, Nu/Nb, Nb)
+            μ = wel_mean(μ, Nu/Nb, Nb)
+            σ² = M₂/Nb
+
+            # Stopping criterion: variance of the estimator of the mean bellow 1e-3
+            if Nu > 50 && σ² < 1e-4
+                completed = 1
+                #@show Nu,Nb,σ²
+            end
+
+        end
+        push!(N_u,Nu)
+        push!(N,Nb)
+        push!(ε,eps)
+    end
+
+    # uncertain function
+    f_ε = N_u./N
+
+    # remove zeros in case there are:
+    ind = f_ε .> 0.
+    f_ε =  f_ε[ind]
+    ε = ε[ind]
+    # get exponent
+    @. model(x, p) = p[1]*x+p[2]
+    fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
+    D = coef(fit)
+    #@show estimate_errors(fit)
+    return D[1],ε,f_ε
+
 end

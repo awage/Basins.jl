@@ -22,8 +22,8 @@ end
 ds = DiscreteDynamicalSystem(grebogi_map,[1., -1.], [] , grebogi_map_J)
 integ  = integrator(ds)
 
-θg=range(0,2π,length=250)
-xg=range(-0.5,0.5,length=250)
+θg=range(0,2π,length=350)
+xg=range(-0.5,0.5,length=350)
 
 @time bsn=Basins.basins_map2D(θg, xg, integ)
 #@time bns2=ChaosTools.basin_map(θg, xg, integ)
@@ -35,5 +35,8 @@ xg=range(-0.5,0.5,length=250)
 α = 2 - bd
 
 # Estimation using original method
-D = uncertainty_exponent(bsn, integ)
+D,e,f = uncertainty_exponent(bsn, integ)
 @show 2-D
+
+D2,e,f = Basins.static_estimate(θg,xg,bsn)
+@show 2-D2
