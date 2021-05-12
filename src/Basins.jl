@@ -12,7 +12,7 @@ using LsqFit
 export basin_entropy, detect_wada_grid_method, detect_wada_merge_method
 export box_counting_dim
 export draw_basin!, basin_map, basin_general_ds
-export basin_stability, uncertainty_exponent
+export basin_stability, uncertainty_exponent, static_estimate
 
 export compute_saddle,compute_basin_precise
 # Write your package code here.

@@ -270,11 +270,11 @@ end
     epsilon = xg[2]-xg[1]
     dmax = max_dist/epsilon
     dmin = min_dist/epsilon
-    @test (round(dmax) == 8.)
-    @test (round(dmin) == 4.)
+    @test (round(dmax) == 6.)
+    @test (round(dmin) == 2.)
 
     W = detect_wada_grid_method(integ, bsn; max_iter=5)
-    @test abs(trunc(W[3];digits=2) - 0.96) < 0.01
+    @test abs(trunc(W[3];digits=2)) ≥ 0.9
 
 end
 

@@ -1,3 +1,9 @@
+# 0.8.0
+* Added fixed resolution uncertainty exponent estimation
+* improved uncertainty exponent estimation
+* bugfix in Wada grid
+
+
 # 0.7.1
 * bugfix
 
