@@ -54,24 +54,20 @@ function uncertainty_exponent(bsn::BasinInfo, integ; precision=1e-3)
     xi = xg[1]; xf = xg[end];
     grid_res_x=xg[2]-xg[1]
 
+    num_step=10
+    N_u = zeros(1,num_step) # number of uncertain box
+    N = zeros(1,num_step) # number of boxes
+    ε = zeros(1,num_step) # resolution
 
     # First we compute a crude estimate to have an idea at which resolution
     D,e,f = static_estimate(xg,yg,bsn);
     println("First estimate: α=",D)
 
-    # estimate the minimum resolution to estimate a f_ε ∼ 10^-3
-    @show min_ε = -3/D[1]
-
-    min_ε = max(min_ε,-7) # limit resolution to 10^-7 to avoid numerical inconsistencies.
-
-    N_u = [] # number of uncertain box
-    N = [] # number of boxes
-    ε = [] # resolution
-
     # resolution in log scale
-    #min_ε = -6;
-    max_ε = log10(grid_res_x*5);
-    num_step=10
+    # estimate the minimum resolution to estimate a f_ε ∼ 10^-3
+    min_ε = -3/D[1]
+    @show min_ε = max(min_ε,-7) # limit resolution to 10^-7 to avoid numerical inconsistencies.
+    max_ε = log10(grid_res_x*5) # max radius of the ball is roughly 5 pixels.
 
     r_ε = 10 .^ range(min_ε,max_ε,length=num_step)
 
@@ -109,15 +105,15 @@ function uncertainty_exponent(bsn::BasinInfo, integ; precision=1e-3)
             if Nu < 10 && Nb>10000
                 # skip this value, we don't find the boundary
                 # corresponds to roughly f_ε ∼ 10^-4
-                @warn "Resolution may be to small for this basin, skip value"
+                @warn "Resolution may be too small for this basin, skip value"
                 completed = 1
                 Nu = 0
             end
 
         end
-        push!(N_u,Nu)
-        push!(N,Nb)
-        push!(ε,eps)
+        N_u[k]=Nu
+        N[k]=Nb
+        ε[k]=eps
     end
 
     # uncertain function
@@ -127,11 +123,15 @@ function uncertainty_exponent(bsn::BasinInfo, integ; precision=1e-3)
     ind = f_ε .> 0
     f_ε =  f_ε[ind]
     ε = ε[ind]
-    # get exponent
-    @. model(x, p) = p[1]*x+p[2]
-    fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
-    D = coef(fit)
-    Dϵ = estimate_errors(fit)
+
+    @show i1,D=linear_region(vec(log10.(ε)), vec(log10.(f_ε)))
+    Dϵ=0.
+    # @show i1
+    # get exponent from a linear region
+    # @. model(x, p) = p[1]*x+p[2]
+    # fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
+    # D = coef(fit)
+    # Dϵ = estimate_errors(fit)
     return D[1], Dϵ[1], vec(log10.(ε)),vec(log10.(f_ε))
 end
 
@@ -152,12 +152,14 @@ end
 function static_estimate(xg,yg,bsn)
 
     xg = bsn.xg; yg = bsn.yg;
+    y_grid_res=yg[2]-yg[1]
     nx=length(xg)
     ny=length(yg)
 
-    N_u = [] # number of uncertain box
-    N = [] # number of boxes
-    ε = [] # resolution
+    num_step=10
+    N_u = zeros(1,num_step) # number of uncertain box
+    N = zeros(1,num_step) # number of boxes
+    ε = zeros(1,num_step) # resolution
 
     # resolution in log scale
     min_ε = 1;
@@ -195,9 +197,9 @@ function static_estimate(xg,yg,bsn)
             end
 
         end
-        push!(N_u,Nu)
-        push!(N,Nb)
-        push!(ε,eps)
+        N_u[k]=Nu
+        N[k]=Nb
+        ε[k]=eps*y_grid_res
     end
 
     # uncertain function
@@ -212,6 +214,104 @@ function static_estimate(xg,yg,bsn)
     fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
     D = coef(fit)
     #@show estimate_errors(fit)
-    return D[1],ε,f_ε
+    return D[1],vec(log10.(ε)), vec(log10.(f_ε))
 
+end
+
+
+
+function ball_estimate(xg,yg,bsn)
+
+    xg = bsn.xg; yg = bsn.yg;
+    xf=xg[end];xi=xg[1];yf=yg[end];yi=yg[1];
+    y_grid_res=yg[2]-yg[1]
+    nx=length(xg)
+    ny=length(yg)
+
+    num_step=10
+    N_u = zeros(1,num_step) # number of uncertain box
+    N = zeros(1,num_step) # number of boxes
+    ε = zeros(1,num_step) # resolution
+
+    # resolution in pixels
+    min_ε = 1;
+    max_ε = 10;
+    @show r_ε = 10 .^ range(log10(min_ε*y_grid_res),log10(max_ε*y_grid_res),length=num_step)
+    #r_ε = (min_ε:max_ε)*y_grid_res
+
+    for (k,eps) in enumerate(r_ε)
+        Nb=0; Nu=0; μ=0; σ²=0; M₂=0;
+        completed = 0;
+        # Find uncertain boxes
+        while completed == 0
+
+            x1 = rand()*((xf-eps)-(xi+eps))+xi+eps
+            y1 = rand()*((yf-eps)-(yi+eps))+yi+eps
+
+            ix,iy = get_indices_in_range(x1,y1,xg,yg,eps)
+            c = [bsn.basin[n,m] for n in ix,m in iy]
+
+            if length(unique(c))>1
+                Nu = Nu + 1
+            end
+            Nb += 1
+
+            # Welford's online average estimation and variance of the estimator
+            M₂ = wel_var(M₂, μ, Nu/Nb, Nb)
+            μ = wel_mean(μ, Nu/Nb, Nb)
+            σ² = M₂/Nb
+
+            # Stopping criterion: variance of the estimator of the mean bellow 1e-3
+            if Nu > 50 && σ² < 5e-5
+                completed = 1
+                @show Nu,Nb,σ²
+            end
+
+        end
+        N_u[k]=Nu
+        N[k]=Nb
+        ε[k]=eps*y_grid_res
+    end
+
+    # uncertain function
+    f_ε = N_u./N
+
+    # remove zeros in case there are:
+    ind = f_ε .> 0.
+    f_ε =  f_ε[ind]
+    ε = ε[ind]
+    # get exponent
+    @. model(x, p) = p[1]*x+p[2]
+    fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
+    D = coef(fit)
+    #@show estimate_errors(fit)
+    return D[1],vec(log10.(ε)), vec(log10.(f_ε))
+
+end
+
+
+
+function get_indices_in_range(x1,y1,xg,yg,eps)
+
+    # center and scale
+    ax = (x1-xg[1])/(xg[2]-xg[1])
+    ay = (y1-yg[1])/(yg[2]-yg[1])
+
+    nx = eps/(xg[2]-xg[1])
+    ny = eps/(yg[2]-yg[1])
+
+    indx = ceil.(Int64,(ax-nx):1.:(ax+nx))
+    indy = ceil.(Int64,(ay-ny):1.:(ay+ny))
+    # Find indices in a circle of radius eps
+    # Ix = Vector{Int64}()
+    # Iy = Vector{Int64}()
+    # for n in indx, m in indy
+    #     if (ax-n)^2+(ay-m)^2 < nx^2
+    #         push!(Ix, n)
+    #         push!(Iy, m)
+    #     end
+    # end
+
+    return indx,indy
+    #return Ix,Iy
 end
