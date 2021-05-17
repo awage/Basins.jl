@@ -41,8 +41,8 @@ d=zeros(1,8)
 #     d[k]=2-box_counting_dim(xg,yg,bsn)
 # end
 
-xg=range(-1.,1.,length=1000)
-yg=range(-1.,1.,length=1000)
+xg=range(-1.,1.,length=300)
+yg=range(-1.,1.,length=300)
 
 @time bsn=Basins.basins_map2D(xg, yg, integ)
 

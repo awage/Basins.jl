@@ -166,21 +166,19 @@ function static_estimate(xg,yg,bsn; precision=1e-4)
     max_ε = 10;
 
     r_ε = min_ε:max_ε
-
+    #@show r_ε = 10 .^ range(log10(min_ε),log10(max_ε),length=num_step)
     for (k,eps) in enumerate(r_ε)
         Nb=0; Nu=0; μ=0; σ²=0; M₂=0;
         completed = 0;
         # Find uncertain boxes
         while completed == 0
-            k1 = rand(1:nx)
-            k2 = rand(eps+1:ny-eps)
+            kx = rand(1:nx)
+            ky = rand(ceil(Int64,eps+1):floor(Int64,ny-eps))
 
+            indy = range(ky-eps,ky+eps,step=1)
+            c = [bsn.basin[kx,ky] for ky in indy]
 
-            c1 = bsn.basin[k1,k2]
-            c2 = bsn.basin[k1,k2+eps]
-            c3 = bsn.basin[k1,k2-eps]
-
-            if length(unique([c1,Int(c2),Int(c3)]))>1
+            if length(unique(c))>1
                 Nu = Nu + 1
             end
             Nb += 1
@@ -210,12 +208,12 @@ function static_estimate(xg,yg,bsn; precision=1e-4)
     f_ε =  f_ε[ind]
     ε = ε[ind]
     # get exponent
-    # @. model(x, p) = p[1]*x+p[2]
-    # fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
-    # D = coef(fit)
-    # @show estimate_errors(fit)
-    D = linear_region(vec(log10.(ε)), vec(log10.(f_ε)))
-    return D[2],vec(log10.(ε)), vec(log10.(f_ε))
+    @. model(x, p) = p[1]*x+p[2]
+    fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
+    D = coef(fit)
+    @show estimate_errors(fit)
+    #D = linear_region(vec(log10.(ε)), vec(log10.(f_ε)))
+    return D[1],vec(log10.(ε)), vec(log10.(f_ε))
 
 end
 
