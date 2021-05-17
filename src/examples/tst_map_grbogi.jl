@@ -22,8 +22,8 @@ end
 ds = DiscreteDynamicalSystem(grebogi_map,[1., -1.], [] , grebogi_map_J)
 integ  = integrator(ds)
 
-θg=range(0,2π,length=350)
-xg=range(-0.5,0.5,length=350)
+θg=range(0,2π,length=600)
+xg=range(-0.5,0.5,length=600)
 
 @time bsn=Basins.basins_map2D(θg, xg, integ)
 #@time bns2=ChaosTools.basin_map(θg, xg, integ)

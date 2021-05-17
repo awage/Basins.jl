@@ -124,14 +124,14 @@ function uncertainty_exponent(bsn::BasinInfo, integ; precision=1e-3)
     f_ε =  f_ε[ind]
     ε = ε[ind]
 
-    @show i1,D=linear_region(vec(log10.(ε)), vec(log10.(f_ε)))
-    Dϵ=0.
+    # @show i1,D=linear_region(vec(log10.(ε)), vec(log10.(f_ε)))
+    # Dϵ=0.
     # @show i1
     # get exponent from a linear region
-    # @. model(x, p) = p[1]*x+p[2]
-    # fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
-    # D = coef(fit)
-    # Dϵ = estimate_errors(fit)
+    @. model(x, p) = p[1]*x+p[2]
+    fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
+    D = coef(fit)
+    Dϵ = estimate_errors(fit)
     return D[1], Dϵ[1], vec(log10.(ε)),vec(log10.(f_ε))
 end
 
@@ -149,7 +149,7 @@ function wel_mean(μ, xₙ, n)
 end
 
 
-function static_estimate(xg,yg,bsn)
+function static_estimate(xg,yg,bsn; precision=1e-4)
 
     xg = bsn.xg; yg = bsn.yg;
     y_grid_res=yg[2]-yg[1]
@@ -161,7 +161,7 @@ function static_estimate(xg,yg,bsn)
     N = zeros(1,num_step) # number of boxes
     ε = zeros(1,num_step) # resolution
 
-    # resolution in log scale
+    # resolution in pixels
     min_ε = 1;
     max_ε = 10;
 
@@ -191,7 +191,7 @@ function static_estimate(xg,yg,bsn)
             σ² = M₂/Nb
 
             # Stopping criterion: variance of the estimator of the mean bellow 1e-3
-            if Nu > 50 && σ² < 1e-4
+            if Nu > 50 && σ² < precision
                 completed = 1
                 #@show Nu,Nb,σ²
             end
@@ -210,17 +210,18 @@ function static_estimate(xg,yg,bsn)
     f_ε =  f_ε[ind]
     ε = ε[ind]
     # get exponent
-    @. model(x, p) = p[1]*x+p[2]
-    fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
-    D = coef(fit)
-    #@show estimate_errors(fit)
-    return D[1],vec(log10.(ε)), vec(log10.(f_ε))
+    # @. model(x, p) = p[1]*x+p[2]
+    # fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
+    # D = coef(fit)
+    # @show estimate_errors(fit)
+    D = linear_region(vec(log10.(ε)), vec(log10.(f_ε)))
+    return D[2],vec(log10.(ε)), vec(log10.(f_ε))
 
 end
 
 
 
-function ball_estimate(xg,yg,bsn)
+function ball_estimate(xg,yg,bsn; precision = 1e-4)
 
     xg = bsn.xg; yg = bsn.yg;
     xf=xg[end];xi=xg[1];yf=yg[end];yi=yg[1];
@@ -236,20 +237,24 @@ function ball_estimate(xg,yg,bsn)
     # resolution in pixels
     min_ε = 1;
     max_ε = 10;
-    @show r_ε = 10 .^ range(log10(min_ε*y_grid_res),log10(max_ε*y_grid_res),length=num_step)
+    @show r_ε = 10 .^ range(log10(min_ε),log10(max_ε),length=num_step)
     #r_ε = (min_ε:max_ε)*y_grid_res
 
     for (k,eps) in enumerate(r_ε)
         Nb=0; Nu=0; μ=0; σ²=0; M₂=0;
         completed = 0;
+        c_ind = get_ind_in_circle(eps)
         # Find uncertain boxes
         while completed == 0
 
-            x1 = rand()*((xf-eps)-(xi+eps))+xi+eps
-            y1 = rand()*((yf-eps)-(yi+eps))+yi+eps
+            kx = rand()*((nx-eps)-(1+eps))+1+eps
+            ky = rand()*((ny-eps)-(1+eps))+1+eps
 
-            ix,iy = get_indices_in_range(x1,y1,xg,yg,eps)
-            c = [bsn.basin[n,m] for n in ix,m in iy]
+            # I = get_indices_in_range(kx, ky, eps, c_ind)
+            # c = [ bsn.basin[n[1],n[2]] for n in eachrow(I)]
+
+            Ix,Iy = get_indices_in_range(kx, ky, eps, c_ind)
+            c = [ bsn.basin[n,m] for n in Ix, m in Iy]
 
             if length(unique(c))>1
                 Nu = Nu + 1
@@ -262,7 +267,7 @@ function ball_estimate(xg,yg,bsn)
             σ² = M₂/Nb
 
             # Stopping criterion: variance of the estimator of the mean bellow 1e-3
-            if Nu > 50 && σ² < 5e-5
+            if Nu > 50 && σ² < precision
                 completed = 1
                 @show Nu,Nb,σ²
             end
@@ -284,34 +289,45 @@ function ball_estimate(xg,yg,bsn)
     @. model(x, p) = p[1]*x+p[2]
     fit = curve_fit(model, vec(log10.(ε)), vec(log10.(f_ε)), [2., 2.])
     D = coef(fit)
-    #@show estimate_errors(fit)
+    @show estimate_errors(fit)
     return D[1],vec(log10.(ε)), vec(log10.(f_ε))
 
 end
 
 
 
-function get_indices_in_range(x1,y1,xg,yg,eps)
+function get_indices_in_range(kx, ky, eps,c_ind)
 
     # center and scale
-    ax = (x1-xg[1])/(xg[2]-xg[1])
-    ay = (y1-yg[1])/(yg[2]-yg[1])
 
-    nx = eps/(xg[2]-xg[1])
-    ny = eps/(yg[2]-yg[1])
+    #indx = ceil.(Int64,(kx-eps):1.:(kx+eps))
+    #indy = ceil.(Int64,(ky-eps):1.:(ky+eps))
+    indx = range(ceil.(Int64,kx-eps),ceil(Int64,kx+eps)-1,step=1)
+    indy = range(ceil.(Int64,ky-eps),ceil(Int64,ky+eps)-1,step=1)
 
-    indx = ceil.(Int64,(ax-nx):1.:(ax+nx))
-    indy = ceil.(Int64,(ay-ny):1.:(ay+ny))
-    # Find indices in a circle of radius eps
-    # Ix = Vector{Int64}()
-    # Iy = Vector{Int64}()
-    # for n in indx, m in indy
-    #     if (ax-n)^2+(ay-m)^2 < nx^2
-    #         push!(Ix, n)
-    #         push!(Iy, m)
-    #     end
-    # end
+
+    #I = deepcopy(c_ind)
+
+
+    #Find indices in a circle of radius eps
+    #I[:,1] .= I[:,1] .+ ceil(Int64,kx)
+    #I[:,2] .= I[:,2] .+ ceil(Int64,ky)
+    #@show [[n[1],n[2]] for n in I]
 
     return indx,indy
-    #return Ix,Iy
+    #return I
+end
+
+
+function get_ind_in_circle(r)
+    #Find indices in a circle of radius eps
+    I = Array{Int64,1}[]
+    r_l = ceil(Int16,r)
+    for n in -r_l:r_l, m in -r_l:r_l
+        if n^2+m^2 ≤ r^2
+            push!(I, [n; m])
+        end
+    end
+    v= hcat(I...)'
+    return v
 end
