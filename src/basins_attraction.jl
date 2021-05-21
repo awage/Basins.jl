@@ -518,6 +518,13 @@ function refine_data(r::MyRefinery, cell::Cell, indices, bsn_nfo::BasinInfo)
     return 1
 end
 
+function get_neighbor_cells(cell::Cell)
+    or = cell.boundary.origin
+    wd = cell.boundary.widths
+    dv = cell.divisions
+    findleaf(cell)
+end
+
 function check_if_complete!(root::Cell, refinery::AbstractRefinery, bsn_nfo::BasinInfo)
     complete = true
     refine_function = (cell, indices) -> refine_data(refinery, cell, indices, bsn_nfo)
@@ -543,11 +550,11 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
     reset_bsn_nfo!(bsn_nfo)
 
     # Initial refinement of the grid.
-    r = MyRefinery(0.1,true)
+    r = MyRefinery(0.2,true)
     @show bsn_nfo.basin
     adaptivesampling!(bsn_nfo.basin, r)
 
-    r_more = MyRefinery(0.01,false)
+    r_more = MyRefinery(0.1,false)
 
     while complete == 0
         # pick the first empty box
