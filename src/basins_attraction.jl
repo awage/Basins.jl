@@ -135,9 +135,10 @@ end
 # The idea is to color the grid with the current color. When an attractor box is hit (even color), the initial condition is colored
 # with the color of its basin (odd color). If the trajectory hits another basin 10 times in row the IC is colored with the same
 # color as this basin.
-function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
+function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
     max_check = 60
-    next_c = bsn_nfo.basin[n,m]
+    #next_c = bsn_nfo.basin[n]
+    next_c=get_data(bsn_nfo.basin, n)
     bsn_nfo.step += 1
 
 
@@ -156,14 +157,17 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
             # Wait if we hit the attractor a Ncheck times in a row just to check if it is not a nearby trajectory
             #println("found IC")
             c3 = next_c+1
-            ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
+
             if Ncheck == 2
                 # For maps we can color the previous steps as well. Every point of the trajectory lead
                 # to the attractor
-                bsn_nfo.basin[ind] .= c3
+                find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, c3)
+                #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
+                #bsn_nfo.basin[ind] .= c3
             else
                 # For higher dimensions we erase the past iterations.
-                bsn_nfo.basin[ind] .= 1
+                find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, 1)
+                #bsn_nfo.basin[ind] .= 1
             end
             reset_bsn_nfo!(bsn_nfo)
             return c3
@@ -172,18 +176,16 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
 
     if next_c == 1 && bsn_nfo.consecutive_match < max_check
         # uncolored box, color it with current odd color
-        bsn_nfo.basin[n,m] = bsn_nfo.current_color + 1
+        #bsn_nfo.basin[n] = bsn_nfo.current_color + 1
+        set_data!(bsn_nfo.basin, n, bsn_nfo.current_color+1)
         bsn_nfo.consecutive_match = 0
         return 0
     elseif next_c == 1 && bsn_nfo.consecutive_match >= max_check
         # Maybe chaotic attractor, perodic or long recursion.
         # Color this box as part of an attractor
-        bsn_nfo.basin[n,m] = bsn_nfo.current_color
-        if haskey(bsn_nfo.attractors , bsn_nfo.current_color)
-            push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
-        else
-            bsn_nfo.attractors[bsn_nfo.current_color] = Dataset([SVector(u[1],u[2])])  # init dic
-        end
+        #bsn_nfo.basin[n] = bsn_nfo.current_color
+        set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
+        store_attractor!(bsn_nfo, u)
         bsn_nfo.consecutive_match = max_check
         #println("1 y > max_check")
         return 0
@@ -194,12 +196,9 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
             return 0
         else
             #println("got attractor")
-            bsn_nfo.basin[n,m] = bsn_nfo.current_color
-            if haskey(bsn_nfo.attractors , bsn_nfo.current_color)
-                push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
-            else
-                bsn_nfo.attractors[bsn_nfo.current_color] = Dataset([SVector(u[1],u[2])])  # init dic
-            end
+            #bsn_nfo.basin[n] = bsn_nfo.current_color
+            set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
+            store_attractor!(bsn_nfo, u)
             # We continue iterating until we hit again the same attractor. In which case we stop.
             return 0;
         end
@@ -218,8 +217,9 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
         end
 
         if bsn_nfo.consecutive_other_basins > 60 || bsn_nfo.prevConsecutives > 10
-            ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
-            bsn_nfo.basin[ind] .= next_c
+            #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
+            #bsn_nfo.basin[ind] .= next_c
+            find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, next_c)
             reset_bsn_nfo!(bsn_nfo)
             return next_c
         end
@@ -230,19 +230,29 @@ function procedure!(bsn_nfo::BasinInfo, n::Int, m::Int, u, Ncheck::Int)
         return 0
     elseif iseven(next_c) && bsn_nfo.consecutive_match >= max_check*2
         # We have checked the presence of an attractor: tidy up everything and get a new box.
-        ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
-        bsn_nfo.basin[ind] .= 1
+        #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
+        #bsn_nfo.basin[ind] .= 1
+        find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, 1)
 
-
-        bsn_nfo.basin[n,m] = bsn_nfo.current_color           # store color
-        push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
+        #bsn_nfo.basin[n] = bsn_nfo.current_color           # store color
+        set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
+        store_attractor!(bsn_nfo, u) # store attractor
         bsn_nfo.current_color = bsn_nfo.next_avail_color
         bsn_nfo.next_avail_color += 2
-        #println("even and > max check ", next_c)
+        println("even and > max check ", next_c)
         reset_bsn_nfo!(bsn_nfo)
         return next_c+1;
     else
         return 0
+    end
+end
+
+
+function store_attractor!(bsn_nfo::BasinInfo, u)
+    if haskey(bsn_nfo.attractors , bsn_nfo.current_color)
+        push!(bsn_nfo.attractors[bsn_nfo.current_color],  u) # store attractor
+    else
+        bsn_nfo.attractors[bsn_nfo.current_color] = Dataset([SVector(u[1],u[2])])  # init dic
     end
 end
 
@@ -320,10 +330,10 @@ function get_color_point!(bsn_nfo::BasinInfo, integ, u0; Ncheck=2)
        bsn_nfo.iter_f!(integ)
        new_u = bsn_nfo.get_u(integ)
 
-       n,m = get_box(new_u, bsn_nfo)
+       n = get_box(new_u, bsn_nfo)
 
-       if n>=0 # apply procedure only for boxes in the defined space
-           done = procedure!(bsn_nfo, n, m, new_u, Ncheck)
+       if !isnothing(n) # apply procedure only for boxes in the defined space
+           done = procedure!(bsn_nfo, n, new_u, Ncheck)
            inlimbo = 0
        else
            # We are outside the defined grid
@@ -345,19 +355,26 @@ function get_box(u, bsn_nfo::BasinInfo)
     xg = bsn_nfo.xg; yg = bsn_nfo.yg; # aliases
     xstep = (xg[2]-xg[1])
     ystep = (yg[2]-yg[1])
-
     xu=u[1]
     yu=u[2]
+    if typeof(bsn_nfo.basin) <: Cell
+        if xu >= xg[1] && xu <= xg[end] && yu >= yg[1] && yu <= yg[end]
+            return findleaf(bsn_nfo.basin,u)
+        else
+            return nothing
+        end
+    end
+
+
     n=0; m=0;
     # check boundary
     if xu >= xg[1] && xu <= xg[end] && yu >= yg[1] && yu <= yg[end]
         n = Int(round((xu-xg[1])/xstep))+1
         m = Int(round((yu-yg[1])/ystep))+1 # +1 for 1 based indexing
     else
-        n=-1
-        m=-1
+        return nothing
     end
-    return n,m
+    return CartesianIndex(n,m)
 end
 
 
@@ -365,20 +382,37 @@ function check_outside_the_screen!(bsn_nfo::BasinInfo, new_u, old_u, inlimbo)
 
     if norm(new_u-old_u) < 1e-5
         #println("Got stuck somewhere, Maybe an attractor outside the screen: ", new_u)
-        ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
-        bsn_nfo.basin[ind] .= 1
+        #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
+        #bsn_nfo.basin[ind] .= 1
+        find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, 1)
         reset_bsn_nfo!(bsn_nfo)
         # this CI goes to a attractor outside the screen, set to -1 (even color)
         return -1  # get next box
     elseif inlimbo > 60*20
         #println("trajectory diverges: ", new_u)
-        ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
-        bsn_nfo.basin[ind] .= 1
+        #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
+        #bsn_nfo.basin[ind] .= 1
+        find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, 1)
         reset_bsn_nfo!(bsn_nfo)
         # this CI is problematic or diverges, set to -1 (even color)
         return -1  # get next box
     end
     return 0
+end
+
+
+function find_and_replace!(basin::Matrix,old_c, new_c)
+    ind = (basin .== old_c)
+    basin[ind] .= new_c
+end
+
+
+function find_and_replace!(basin::Cell,old_c, new_c)
+    for leaf in allleaves(basin)
+        if leaf.data == old_c
+            leaf.data = new_c
+        end
+    end
 end
 
 
@@ -391,4 +425,179 @@ function reset_bsn_nfo!(bsn_nfo::BasinInfo)
     bsn_nfo.prev_bas = 1
     bsn_nfo.prev_step = 0
     bsn_nfo.step = 0
+end
+
+function basins_map2D_tree(xg, yg, integ; T=0., Ncheck = 2)
+    if T>0
+        iter_f! = (integ) -> step!(integ, T, true)
+    else
+        iter_f! = (integ) -> step!(integ)
+    end
+    reinit_f! =  (integ,y) -> reinit!(integ, y)
+    get_u = (integ) -> integ.u
+
+    return draw_basin_tree!(xg, yg, integ, iter_f!, reinit_f!, get_u, Ncheck)
+end
+
+
+import RegionTrees: AbstractRefinery, needs_refinement, refine_data
+
+struct MyRefinery <: AbstractRefinery
+    tolerance::Float64
+    init_dat::Bool
+end
+
+# These two methods are all we need to implement
+function needs_refinement(r::MyRefinery, cell)
+    if r.init_dat
+        return maximum(cell.boundary.widths) > r.tolerance
+    else
+        @show cell
+        return maximum(cell.boundary.widths) > r.tolerance #&& (length(unique([l.data for l in children(cell.parent)])) > 1)
+    # else
+    #     return false
+    end
+end
+
+function refine_data(r::MyRefinery, cell::Cell, indices)
+        return 1
+end
+
+function is_in_cell(cell::Cell,  point::AbstractVector, indices)
+    or = cell.boundary.origin
+    wd = cell.boundary.widths
+    dv = cell.divisions
+    if point[1] > or[1] + wd[1] || point[1] < or[1]
+        return false
+    elseif point[2] > or[2] + wd[2] || point[2] < or[2]
+        return false
+    else
+        ind = [1,1]
+        if point[1] > dv[1]
+            ind[1]=2
+        end
+        if point[2] > dv[2]
+            ind[2]=2
+        end
+        if ind[1] == indices[1] && ind[2] == indices[2]
+            return true
+        else
+            return false
+        end
+    end
+end
+
+
+function get_att_index(cell::Cell,  point::AbstractVector)
+    or = cell.boundary.origin
+    wd = cell.boundary.widths
+    dv = cell.divisions
+    ind = 1,1
+    if point[1] > dv[1]
+        ind[1]=2
+    end
+
+    if point[2] > dv[2]
+        ind[2]=2
+    end
+
+    return ind
+end
+
+function refine_data(r::MyRefinery, cell::Cell, indices, bsn_nfo::BasinInfo)
+
+    if iseven(cell.data)
+        att = cell.data
+        for p in bsn_nfo.attractors[att]
+            if is_in_cell(cell,p, indices)
+                @show att,p,cell.boundary,indices
+                return att
+            end
+        end
+    end
+    return 1
+end
+
+function check_if_complete!(root::Cell, refinery::AbstractRefinery, bsn_nfo::BasinInfo)
+    complete = true
+    refine_function = (cell, indices) -> refine_data(refinery, cell, indices, bsn_nfo)
+    for lf in allleaves(root)
+        if maximum(lf.boundary.widths) > refinery.tolerance && (length(unique([l.data for l in children(lf.parent)])) > 1)
+            complete = false
+            split!(lf, refine_function)
+        end
+    end
+    return complete
+end
+
+
+
+function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_u::Function, Ncheck)
+
+    complete = 0;
+
+    xi=xg[1]; yi=yg[1]; xf=xg[end]; yf=yg[end]
+
+    bsn_nfo = BasinInfo(Cell(SVector(xi, yi), SVector(xf-xi, yf-xi),1), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,Dict{Int16,Dataset{2,Float64}}(),0)
+
+    reset_bsn_nfo!(bsn_nfo)
+
+    # Initial refinement of the grid.
+    r = MyRefinery(0.1,true)
+    @show bsn_nfo.basin
+    adaptivesampling!(bsn_nfo.basin, r)
+
+    r_more = MyRefinery(0.01,false)
+
+    while complete == 0
+        # pick the first empty box
+        lf = nothing
+        for leaf in allleaves(bsn_nfo.basin)
+            if leaf.data == 1
+                lf=leaf
+            end
+        end
+        if isnothing(lf)
+            println("refinement!")
+            if check_if_complete!(bsn_nfo.basin, r_more, bsn_nfo)
+                complete=1
+                break
+            end
+            for leaf in allleaves(bsn_nfo.basin)
+                if leaf.data == 1
+                    lf=leaf
+                end
+            end
+        end
+
+
+        # Tentatively assign a color: odd is for basins, even for attractors.
+        # First color is one
+        lf.data = bsn_nfo.current_color + 1
+
+        u0 = RegionTrees.center(lf)
+
+        lf.data = get_color_point!(bsn_nfo, integ, u0; Ncheck=Ncheck)
+
+    end
+
+    bsn_nfo.Na = Int((bsn_nfo.current_color-2)/2)
+
+    return bsn_nfo
+end
+
+function get_data(bsn::Matrix,n)
+    return bsn[n]
+end
+
+function get_data(bsn::Cell,n)
+    return n.data
+end
+
+function set_data!(bsn::Matrix,n,c)
+    bsn[n]=c
+end
+
+function set_data!(bsn::Cell,n,c)
+    n.data=c
 end

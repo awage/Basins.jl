@@ -8,6 +8,7 @@ using NearestNeighbors
 using Combinatorics
 using Roots
 using LsqFit
+using RegionTrees
 
 export basin_entropy, detect_wada_grid_method, detect_wada_merge_method
 export box_counting_dim
