@@ -16,6 +16,7 @@ Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 
 [compat]
 Combinatorics = "0.7, 1"
+DataStructures = "0.18"
 DynamicalSystems = "1.6.0"
 ImageFiltering = "0.6"
 LsqFit = "0.12.0"

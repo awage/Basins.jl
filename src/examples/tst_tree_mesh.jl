@@ -35,7 +35,7 @@ for leaf in allleaves(bsn.basin)
     v = hcat(collect(vertices(leaf.boundary))...)
     #plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]])
     #@show leaf.data
-    plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]],fill=(1,col[leaf.data]), linecolor=:black, lw=0.5)
+    plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]],fill=(1,col[mod(leaf.data,20)]), linecolor=:black, lw=0)
 
 end
 plt
