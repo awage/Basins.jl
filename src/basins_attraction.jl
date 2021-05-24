@@ -1,6 +1,6 @@
 PoincareMap = ChaosTools.PoincareMap
 
-mutable struct BasinInfo{I,F,D}
+mutable struct BasinInfo{I,F,D,Q}
     basin :: I
     xg :: F
     yg :: F
@@ -18,6 +18,8 @@ mutable struct BasinInfo{I,F,D}
     step :: Int64
     attractors :: D #Dict{Int16,Vector{Vector{Float64}}}
     Na :: Int64
+    visited :: Q
+    available :: Q
 end
 
 function Base.show(io::IO, bsn::BasinInfo)
@@ -178,6 +180,7 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
         # uncolored box, color it with current odd color
         #bsn_nfo.basin[n] = bsn_nfo.current_color + 1
         set_data!(bsn_nfo.basin, n, bsn_nfo.current_color+1)
+        push!(bsn_nfo.visited,u)
         bsn_nfo.consecutive_match = 0
         return 0
     elseif next_c == 1 && bsn_nfo.consecutive_match >= max_check
@@ -234,7 +237,8 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
         #bsn_nfo.basin[ind] .= 1
         find_and_replace!(bsn_nfo.basin,bsn_nfo.current_color+1, 1)
 
-        #bsn_nfo.basin[n] = bsn_nfo.current_color           # store color
+        #bsn_nfo.basin[n] = bsn_nfo.current_color
+        # store color
         set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
         store_attractor!(bsn_nfo, u) # store attractor
         bsn_nfo.current_color = bsn_nfo.next_avail_color
@@ -505,7 +509,6 @@ function get_att_index(cell::Cell,  point::AbstractVector)
 end
 
 function refine_data(r::MyRefinery, cell::Cell, indices, bsn_nfo::BasinInfo)
-
     if iseven(cell.data)
         att = cell.data
         for p in bsn_nfo.attractors[att]
@@ -515,6 +518,7 @@ function refine_data(r::MyRefinery, cell::Cell, indices, bsn_nfo::BasinInfo)
             end
         end
     end
+    push!(bsn_nfo.available,cell.divisions)
     return 1
 end
 
@@ -545,7 +549,7 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
 
     xi=xg[1]; yi=yg[1]; xf=xg[end]; yf=yg[end]
 
-    bsn_nfo = BasinInfo(Cell(SVector(xi, yi), SVector(xf-xi, yf-xi),1), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,Dict{Int16,Dataset{2,Float64}}(),0)
+    bsn_nfo = BasinInfo(Cell(SVector(xi, yi), SVector(xf-xi, yf-xi),1), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,Dict{Int16,Dataset{2,Float64}}(),0,Deque{Vector{Float64}}(),Deque{Vector{Float64}}())
 
     reset_bsn_nfo!(bsn_nfo)
 
@@ -554,28 +558,43 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
     @show bsn_nfo.basin
     adaptivesampling!(bsn_nfo.basin, r)
 
+    for lf in allleaves(bsn_nfo.basin)
+        push!(bsn_nfo.available,lf.divisions)
+    end
     r_more = MyRefinery(0.1,false)
 
     while complete == 0
         # pick the first empty box
+        # lf = nothing
+        # for leaf in allleaves(bsn_nfo.basin)
+        #     if leaf.data == 1
+        #         lf=leaf
+        #     end
+        # end
+        #
+        # if isnothing(lf)
         lf = nothing
-        for leaf in allleaves(bsn_nfo.basin)
-            if leaf.data == 1
-                lf=leaf
+        while !isempty(bsn_nfo.available)
+            point = pop!(bsn_nfo.available)
+            lf = findleaf(bsn_nfo.basin,point)
+            if lf.data == 1
+                break
             end
         end
-        if isnothing(lf)
+
+        if isempty(bsn_nfo.available)
             println("refinement!")
             if check_if_complete!(bsn_nfo.basin, r_more, bsn_nfo)
                 complete=1
                 break
             end
-            for leaf in allleaves(bsn_nfo.basin)
-                if leaf.data == 1
-                    lf=leaf
-                end
-            end
+            # for leaf in allleaves(bsn_nfo.basin)
+            #     if leaf.data == 1
+            #         lf=leaf
+            #     end
+            # end
         end
+
 
 
         # Tentatively assign a color: odd is for basins, even for attractors.
