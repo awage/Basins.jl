@@ -74,6 +74,7 @@ function _init_map(pmap::PoincareMap, y, idxs)
     # all other coordinates are zero
     reinit!(pmap, u)
 end
+# nueva linea
 
 
 function basins_map2D(xg, yg, integ; T=0., Ncheck = 2)
