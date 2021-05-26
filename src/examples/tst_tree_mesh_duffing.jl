@@ -4,28 +4,22 @@ using Basins
 using DynamicalSystems
 using RegionTrees
 
-function newton_map(dz,z, p, n)
-    f(x) = x^p[1]-1
-    df(x)= p[1]*x^(p[1]-1)
-    z1 = z[1] + im*z[2]
-    dz1 = f(z1)/df(z1)
-    z1 = z1 - dz1
-    dz[1]=real(z1)
-    dz[2]=imag(z1)
-    return
+
+@inline @inbounds function duffing(u, p, t)
+    d = p[1]; F = p[2]; omega = p[3]
+    du1 = u[2]
+    du2 = -d*u[2] + u[1] - u[1]^3 + F*sin(omega*t)
+    return SVector{2}(du1, du2)
 end
 
-# dummy function to keep the initializator happy
-function newton_map_J(J,z0, p, n)
-   return
-end
-
-
-ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [3] , newton_map_J)
-integ  = integrator(ds)
-res=10
-xg=range(-1.,1.,length=res)
-yg=range(-1.,1.,length=res)
+F=0.3818791946308725; ω= 0.1966442953020134
+#F=0.2771812080536913; ω=0.1;
+#ω=0.1617;F = 0.395
+#ω=0.3;F = 0.1
+ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
+integ_df  = integrator(ds; reltol=1e-8, save_everystep=false)
+xg = range(-2.2,2.2,length=300)
+yg = range(-2.2,2.2,length=300)
 
 @time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.1, r_max=0.001)
 
@@ -33,22 +27,18 @@ function evaluate(basin,v)
     return findleaf(basin,v).data
 end
 
-plt = plot(xlim=(-1, 1), ylim=(-1, 1), legend=nothing)
-
-x = range(-1, stop=1, length=1000)
-y = range(-1, stop=1, length=1000)
+plt = plot(xlim=(-2.2, 2.2), ylim=(-2.2, 2.2), legend=nothing)
+x = range(-2.2, 2.2, length=1000)
+y = range(-2.2, 2.2, length=1000)
 heatmap!(plt, x, y, (x, y) -> evaluate(bsn.basin, SVector(x, y)), fill=true)
 
 
 function compute_frac_dim(bsn)
-
     root_n(x,n) = foldl((y,_) -> parent(y), 1:n; init=x)
-
     N = zeros(Int, 20)
     wd=1e3
     k_mx = 0
     for lf in allcells(bsn.basin)
-
         k = 1
         while !isnothing(root_n(lf,k))
             k += 1

@@ -479,7 +479,7 @@ function refine_data(cell::Cell, indices, bsn_nfo::BasinInfo)
         att = cell.data
         for p in bsn_nfo.attractors[att]
             if is_in_cell(cell,p, indices)
-                @show att,p,cell.boundary,indices
+                #@show att,p,cell.boundary,indices
                 return att
             end
         end
@@ -502,18 +502,16 @@ end
 function check_if_complete!(root::Cell, r_max, bsn_nfo::BasinInfo)
     complete = true
     refine_function = (cell, indices) -> refine_data(cell, indices, bsn_nfo)
-    leaf_stack = Dataset([0. 0.])
+    leaf_stack = Vector{Cell}()
     for lf in allleaves(root)
-        #if maximum(lf.boundary.widths) > refinery.tolerance && (length(unique([l.data for l in children(lf.parent)])) > 1)
         if maximum(lf.boundary.widths) > r_max && get_neighbor_cells(root,lf)
             complete = false
-            #split!(lf, refine_function)
-            push!(leaf_stack,lf.boundary.origin)
+            push!(leaf_stack,lf)
         end
     end
 
-    for lf in leaf_stack[2:end]
-        l = findleaf(root,lf)
+    while !isempty(leaf_stack)
+        l = pop!(leaf_stack)
         split!(l, refine_function)
         for cl in children(l)
             if cl.data == 1
@@ -549,14 +547,6 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
 
     while complete == 0
 
-        if isempty(bsn_nfo.available)
-            println("refinement!")
-            if check_if_complete!(bsn_nfo.basin, r_max, bsn_nfo)
-                complete=1
-                break
-            end
-        end
-
         # Get next available candidate
         lf = nothing
         while !isempty(bsn_nfo.available)
@@ -566,6 +556,25 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
                 break
             end
         end
+
+
+        if isempty(bsn_nfo.available)
+            println("refinement!")
+            if check_if_complete!(bsn_nfo.basin, r_max, bsn_nfo)
+                complete=1
+                break
+            end
+            # Get next available candidate
+            while !isempty(bsn_nfo.available)
+                l = pop!(bsn_nfo.available)
+                if l.data == 1
+                    lf = l
+                    break
+                end
+            end
+
+        end
+
         # Tentatively assign a color: odd is for basins, even for attractors.
         # First color is one
         lf.data = bsn_nfo.current_color + 1

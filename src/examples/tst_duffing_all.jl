@@ -3,7 +3,6 @@ using Basins
 using Printf
 using Plots
 using DynamicalSystems
-using DifferentialEquations
 
 @inline @inbounds function duffing(u, p, t)
     d = p[1]; F = p[2]; omega = p[3]
@@ -15,9 +14,9 @@ end
 F=0.3818791946308725; ω= 0.1966442953020134
 #F=0.2771812080536913; ω=0.1;
 #ω=0.1617;F = 0.395
-ω=0.3;F = 0.1
+#ω=0.3;F = 0.1
 ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
-integ_df  = integrator(ds; alg=Tsit5(),  reltol=1e-8, save_everystep=false)
+integ_df  = integrator(ds; reltol=1e-8, save_everystep=false)
 xg = range(-2.2,2.2,length=300)
 yg = range(-2.2,2.2,length=300)
 
