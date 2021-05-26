@@ -29,13 +29,13 @@ yg=range(-1.,1.,length=res)
 
 @time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.1, r_max=0.05)
 
-plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), legend=nothing)
-col=Plots.palette(:tab20)
-for leaf in allleaves(bsn.basin)
-    v = hcat(collect(vertices(leaf.boundary))...)
-    #plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]])
-    #@show leaf.data
-    plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]],fill=(1,col[mod(leaf.data,20)]), linecolor=:black, lw=0)
-
-end
-plt
+# plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), legend=nothing)
+# col=Plots.palette(:tab20)
+# for leaf in allleaves(bsn.basin)
+#     v = hcat(collect(vertices(leaf.boundary))...)
+#     #plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]])
+#     #@show leaf.data
+#     plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]],fill=(1,col[mod(leaf.data,20)]), linecolor=:black, lw=0)
+#
+# end
+# plt
