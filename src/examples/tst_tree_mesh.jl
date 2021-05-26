@@ -27,7 +27,7 @@ res=10
 xg=range(-1.,1.,length=res)
 yg=range(-1.,1.,length=res)
 
-@time bsn=Basins.basins_map2D_tree(xg, yg, integ)
+@time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.1, r_max=0.05)
 
 plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), legend=nothing)
 col=Plots.palette(:tab20)

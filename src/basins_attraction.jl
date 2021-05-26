@@ -158,19 +158,14 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
 
         if bsn_nfo.prevConsecutives >= Ncheck
             # Wait if we hit the attractor a Ncheck times in a row just to check if it is not a nearby trajectory
-            #println("found IC")
             c3 = next_c+1
-
             if Ncheck == 2
                 # For maps we can color the previous steps as well. Every point of the trajectory lead
                 # to the attractor
                 find_and_replace!(bsn_nfo, bsn_nfo.current_color+1, c3)
-                #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
-                #bsn_nfo.basin[ind] .= c3
             else
                 # For higher dimensions we erase the past iterations.
                 find_and_replace!(bsn_nfo, bsn_nfo.current_color+1, 1)
-                #bsn_nfo.basin[ind] .= 1
             end
             reset_bsn_nfo!(bsn_nfo)
             return c3
@@ -179,7 +174,6 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
 
     if next_c == 1 && bsn_nfo.consecutive_match < max_check
         # uncolored box, color it with current odd color
-        #bsn_nfo.basin[n] = bsn_nfo.current_color + 1
         set_data!(bsn_nfo.basin, n, bsn_nfo.current_color+1)
         push!(bsn_nfo.visited,n)
         bsn_nfo.consecutive_match = 0
@@ -187,11 +181,9 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
     elseif next_c == 1 && bsn_nfo.consecutive_match >= max_check
         # Maybe chaotic attractor, perodic or long recursion.
         # Color this box as part of an attractor
-        #bsn_nfo.basin[n] = bsn_nfo.current_color
         set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
         store_attractor!(bsn_nfo, u)
         bsn_nfo.consecutive_match = max_check
-        #println("1 y > max_check")
         return 0
     elseif next_c == bsn_nfo.current_color + 1
         # hit a previously visited box with the current color, possible attractor?
@@ -199,8 +191,6 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
             bsn_nfo.consecutive_match += 1
             return 0
         else
-            #println("got attractor")
-            #bsn_nfo.basin[n] = bsn_nfo.current_color
             set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
             store_attractor!(bsn_nfo, u)
             # We continue iterating until we hit again the same attractor. In which case we stop.
@@ -232,11 +222,7 @@ function procedure!(bsn_nfo::BasinInfo, n, u, Ncheck::Int)
         return 0
     elseif iseven(next_c) && bsn_nfo.consecutive_match >= max_check*2
         # We have checked the presence of an attractor: tidy up everything and get a new box.
-        #ind = (bsn_nfo.basin .== bsn_nfo.current_color+1)
-        #bsn_nfo.basin[ind] .= 1
         find_and_replace!(bsn_nfo, bsn_nfo.current_color+1, 1)
-
-        #bsn_nfo.basin[n] = bsn_nfo.current_color
         # store color
         set_data!(bsn_nfo.basin, n, bsn_nfo.current_color)
         store_attractor!(bsn_nfo, u) # store attractor
@@ -435,7 +421,7 @@ function reset_bsn_nfo!(bsn_nfo::BasinInfo)
     bsn_nfo.step = 0
 end
 
-function basins_map2D_tree(xg, yg, integ; T=0., Ncheck = 2)
+function basins_map2D_tree(xg, yg, integ; T=0., Ncheck = 2, r_init=0.2, r_max=0.1)
     if T>0
         iter_f! = (integ) -> step!(integ, T, true)
     else
@@ -444,7 +430,7 @@ function basins_map2D_tree(xg, yg, integ; T=0., Ncheck = 2)
     reinit_f! =  (integ,y) -> reinit!(integ, y)
     get_u = (integ) -> integ.u
 
-    return draw_basin_tree!(xg, yg, integ, iter_f!, reinit_f!, get_u, Ncheck)
+    return draw_basin_tree!(xg, yg, integ, iter_f!, reinit_f!, get_u, Ncheck, r_init, r_max)
 end
 
 
@@ -506,9 +492,9 @@ function get_neighbor_cells(root::Cell,cell::Cell)
     wd = cell.boundary.widths
     dv = cell.divisions
     W=findleaf(root,dv + SVector(wd[1],0)).data
-    E=findleaf(root,dv .+ SVector(-wd[1],0)).data
-    N=findleaf(root,dv .+ SVector(0,wd[2])).data
-    S=findleaf(root,dv .+ SVector(0,-wd[2])).data
+    E=findleaf(root,dv + SVector(-wd[1],0)).data
+    N=findleaf(root,dv + SVector(0,wd[2])).data
+    S=findleaf(root,dv + SVector(0,-wd[2])).data
     #@show [W E N S cell.data]
     return length(unique([W E N S cell.data])) > 1
 end
@@ -541,7 +527,7 @@ end
 
 
 
-function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_u::Function, Ncheck)
+function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_u::Function, Ncheck, r_init, r_max)
 
     complete = 0;
 
@@ -553,10 +539,10 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
     reset_bsn_nfo!(bsn_nfo)
 
     # Initial refinement of the grid.
-    r = MyRefinery(0.2)
+    r = MyRefinery(r_init)
     @show bsn_nfo.basin
     adaptivesampling!(bsn_nfo.basin, r)
-    r_max = 0.1
+
     for lf in allleaves(bsn_nfo.basin)
         push!(bsn_nfo.available,lf)
     end
@@ -572,8 +558,14 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
         end
 
         # Get next available candidate
-        lf = pop!(bsn_nfo.available)
-
+        lf = nothing
+        while !isempty(bsn_nfo.available)
+            l = pop!(bsn_nfo.available)
+            if l.data == 1
+                lf = l
+                break
+            end
+        end
         # Tentatively assign a color: odd is for basins, even for attractors.
         # First color is one
         lf.data = bsn_nfo.current_color + 1
