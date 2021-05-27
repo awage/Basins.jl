@@ -23,16 +23,11 @@ integ  = integrator(ds)
 θg=range(0,2π,length=600)
 xg=range(-0.5,0.5,length=600)
 
-@time bsn=Basins.basins_map2D_tree(θg, xg, integ; r_init=0.1, r_max=0.01)
+@time bsn=Basins.basins_map2D_tree(θg, xg, integ; r_init=0.4, r_max=0.1)
 
 function evaluate(basin,v)
     return findleaf(basin,v).data
 end
-
-plt = plot(xlim=(0, 2π), ylim=(-0.5, 0.5), legend=nothing)
-x = range(0, 2π, length=1000)
-y = range(-0.5, 0.5, length=1000)
-heatmap!(plt, x, y, (x, y) -> evaluate(bsn.basin, SVector(x, y)), fill=true)
 
 
 function compute_frac_dim(bsn)
@@ -61,3 +56,19 @@ elog = log10.(1 ./ eps)
 Nlog = log10.(N)
 D = linear_region(elog[4:end],Nlog[4:end])
 @show D
+
+
+plt = plot(xlim=(θg[1], θg[end]), ylim=(xg[1], xg[end]), legend=nothing)
+heatmap!(plt, θg, xg, (x, y) -> evaluate(bsn.basin, SVector(x, y)), fill=true)
+
+
+
+# plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), legend=nothing)
+ for leaf in allleaves(bsn.basin)
+     v = hcat(collect(vertices(leaf.boundary))...)
+     #plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]])
+     #@show leaf.data
+     plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]], linecolor=:black, lw=0.4)
+
+ end
+ plt

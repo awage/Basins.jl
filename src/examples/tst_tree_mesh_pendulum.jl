@@ -4,6 +4,7 @@ using DynamicalSystems
 using Basins
 using Plots
 using Printf
+using RegionTrees
 
 # Equations of motion:
 function forced_pendulum(u, p, t)
@@ -37,8 +38,8 @@ p=[d, F, ω]
 df = ODEProblem(forced_pendulum,rand(2),(0.0,20.0), p)
 integ  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-8, save_everystep=false, callback=cb)
 
-xres=100
-yres=100
+xres=120
+yres=120
 
 # range for forced pend
 xg = range(-pi,pi,length=xres)
