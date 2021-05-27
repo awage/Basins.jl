@@ -44,7 +44,7 @@ yres=100
 xg = range(-pi,pi,length=xres)
 yg = range(-2.,4.,length=yres)
 
-@time bsn=Basins.basins_map2D_tree(xg, yg, integ; T=2π/ω, r_init=0.1, r_max=0.01)
+@time bsn=Basins.basins_map2D_tree(xg, yg, integ; T=2π/ω, r_init=0.2, r_max=0.1)
 
 function evaluate(basin,v)
     return findleaf(basin,v).data

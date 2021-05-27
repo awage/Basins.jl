@@ -27,7 +27,7 @@ res=10
 xg=range(-1.,1.,length=res)
 yg=range(-1.,1.,length=res)
 
-@time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.1, r_max=0.001)
+@time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.2, r_max=0.1)
 
 function evaluate(basin,v)
     return findleaf(basin,v).data

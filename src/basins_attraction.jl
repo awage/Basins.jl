@@ -532,7 +532,7 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
     xi=xg[1]; yi=yg[1]; xf=xg[end]; yf=yg[end]
 
     bsn_nfo = BasinInfo(Cell(SVector(xi, yi), SVector(xf-xi, yf-xi),1), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,
-                Dict{Int16,Dataset{2,Float64}}(),0,Deque{Cell}(),Deque{Cell}())
+                Dict{Int16,Dataset{2,Float64}}(),0,Vector{Cell}(),Vector{Cell}())
 
     reset_bsn_nfo!(bsn_nfo)
 
@@ -564,6 +564,7 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
                 complete=1
                 break
             end
+            println("end refinement!")
             # Get next available candidate
             while !isempty(bsn_nfo.available)
                 l = pop!(bsn_nfo.available)
