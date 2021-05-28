@@ -22,17 +22,21 @@ function get_list(basin,xg ,yg)
     num_att = length(unique(basin))
 
     # v_list empty container that will receive the different coordinates corresponding to each basins,
-    # Each element of this set is an array of coordinates of different sizes.
-    v_list = []
+    # Each element of this v_set is an array of coordinates of different sizes.
+    v_list = Vector{SVector{2,Float64}}()
+    v_set = Vector{typeof(v_list)}()
 
     # original boundary
     bnd = get_boundary_filt(basin)
     I1=findall(bnd .== 1);
-    push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
+    for ind in I1; push!(v_list , [xg[ind[1]]; yg[ind[2]]]); end
+    #@show v_list
+    push!(v_set,v_list)
 
     # Merging !!
     basin_i_j = zeros(Int8,size(basin))
     for k in unique(basin)
+        v_list = Vector{Vector{Float64}}()
         fill!(basin_i_j, zero(0)) # erase matrix
         I = findall(basin .== k)
         [basin_i_j[x] = 1 for x in I];
@@ -40,9 +44,12 @@ function get_list(basin,xg ,yg)
         bnd = get_boundary_filt(basin_i_j)
         I1=findall(bnd .== 1);
         # Get coordinates lists from matrix
-        push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
+        #push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
+        for ind in I1; push!(v_list , [xg[ind[1]]; yg[ind[2]]]); end
+        push!(v_set,v_list)
     end
-    return v_list
+
+    return v_set
 end
 
 

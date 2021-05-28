@@ -564,7 +564,6 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
                 complete=1
                 break
             end
-            println("end refinement!")
             # Get next available candidate
             while !isempty(bsn_nfo.available)
                 l = pop!(bsn_nfo.available)
@@ -573,6 +572,8 @@ function draw_basin_tree!(xg, yg, integ, iter_f!::Function, reinit_f!::Function,
                     break
                 end
             end
+
+            println("end refinement! res=", lf.boundary.widths)
 
         end
 

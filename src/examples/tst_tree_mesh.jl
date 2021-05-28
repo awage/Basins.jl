@@ -51,14 +51,14 @@ function compute_frac_dim(bsn)
         k_mx = max(k_mx,k)
     end
     @show N
-    eps = reverse(wd * 2 .^ range(0,k_mx-1,step=1))
-    return eps,N[1:k_mx]
+    epsi = reverse(wd * 2 .^ range(0,k_mx-1,step=1))
+    return epsi,N[1:k_mx]
 end
 
 
-eps,N = compute_frac_dim(bsn)
+epsi,N = compute_frac_dim(bsn)
 
-elog = log10.(1 ./ eps)
+elog = log10.(1 ./ epsi)
 Nlog = log10.(N)
 D = linear_region(elog[4:end],Nlog[4:end])
 @show D

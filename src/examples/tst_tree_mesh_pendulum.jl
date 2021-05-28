@@ -45,7 +45,7 @@ yres=120
 xg = range(-pi,pi,length=xres)
 yg = range(-2.,4.,length=yres)
 
-@time bsn=Basins.basins_map2D_tree(xg, yg, integ; T=2π/ω, r_init=0.2, r_max=0.1)
+@time bsn=Basins.basins_map2D_tree(xg, yg, integ; T=2π/ω, r_init=0.1, r_max=0.04)
 
 function evaluate(basin,v)
     return findleaf(basin,v).data
@@ -67,14 +67,14 @@ function compute_frac_dim(bsn)
         k_mx = max(k_mx,k)
     end
     @show N
-    eps = reverse(wd * 2 .^ range(0,k_mx-1,step=1))
-    return eps,N[1:k_mx]
+    ε = reverse(wd * 2 .^ range(0,k_mx-1,step=1))
+    return ε,N[1:k_mx]
 end
 
 
-eps,N = compute_frac_dim(bsn)
+ε,N = compute_frac_dim(bsn)
 
-elog = log10.(1 ./ eps)
+elog = log10.(1 ./ ε)
 Nlog = log10.(N)
 D = linear_region(elog[4:end],Nlog[4:end])
 @show D

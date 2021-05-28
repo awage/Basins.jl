@@ -11,8 +11,8 @@ using DynamicalSystems
     return SVector{2}(du1, du2)
 end
 
-F=0.3818791946308725; ω= 0.1966442953020134
-#F=0.2771812080536913; ω=0.1;
+#F=0.3818791946308725; ω= 0.1966442953020134
+F=0.2771812080536913; ω=0.1;  # smooth boundary
 #ω=0.1617;F = 0.395
 #ω=0.3;F = 0.1
 ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
