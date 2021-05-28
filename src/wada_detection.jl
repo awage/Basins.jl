@@ -157,7 +157,7 @@ function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
        @error "The basin contains escapes or undefined attractors, cannot test for Wada"
        return nothing
    end
-   
+
 
 
    # helper function to obtain coordinates
