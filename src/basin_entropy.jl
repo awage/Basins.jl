@@ -1,4 +1,3 @@
-
 """
     basin_entropy(basin; eps_x=20, eps_y=20)
 This algorithm computes the basin entropy of a computed basin of attraction on a regular grid.
@@ -12,8 +11,6 @@ a new tool to analyze uncertainty in dynamical systems, Sci. Rep., 6, 31416, (20
 
 ## Keyword arguments
 * `eps_x`, `eps_y` : define the size of the box that will be used to sample the basin
-
-
 """
 function basin_entropy(basin; eps_x=20, eps_y=20)
     r,c= size(basin)
@@ -23,18 +20,15 @@ function basin_entropy(basin; eps_x=20, eps_y=20)
     Sb=0
     Nb=0
     N=0
-    for x = 1:eps_x:(r-eps_x+1)
-        for y = 1:eps_y:(c-eps_y+1)
-            x_coor=x:x+eps_x-1
-            y_coor=y:y+eps_y-1
-            box_values=[basin[k,m] for k in x_coor, m in y_coor]
-            N=N+1
-            for (k,v) in enumerate(vals)
-                pn[k]=count(x->x==v,box_values)/length(box_values)
-            end
-            Nb = Nb + (length(unique(box_values))>1)
-            Sb = Sb + sum(entropy.(pn))
+    for x in 1:eps_x:(r-eps_x+1), y in 1:eps_y:(c-eps_y+1)
+        I = CartesianIndices((x:x+eps_x-1,y:y+eps_y-1))
+        box_values=[basin[k] for k in I]
+        N=N+1
+        for (k,v) in enumerate(vals)
+            pn[k]=count(x->x==v,box_values)/length(box_values)
         end
+        Nb = Nb + (length(unique(box_values))>1)
+        Sb = Sb + sum(entropy.(pn))
     end
         return Sb/N, Sb/Nb
 end

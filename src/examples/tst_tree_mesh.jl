@@ -27,7 +27,7 @@ res=10
 xg=range(-1.,1.,length=res)
 yg=range(-1.,1.,length=res)
 
-@time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.2, r_max=0.001)
+@time bsn=Basins.basins_map2D_tree(xg, yg, integ; r_init=0.125, r_max=0.125/4)
 
 function evaluate(basin,v)
     return findleaf(basin,v).data
@@ -73,13 +73,13 @@ y = range(yg[1], yg[end], length=1000)
 heatmap!(plt, x, y, (x, y) -> evaluate(bsn.basin, SVector(x, y)), fill=true)
 
 
-#
-# # plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), legend=nothing)
-#  for leaf in allleaves(bsn.basin)
-#      v = hcat(collect(vertices(leaf.boundary))...)
-#      #plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]])
-#      #@show leaf.data
-#      plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]], linecolor=:black, lw=0.4)
-#
-#  end
-#  plt
+
+# plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), legend=nothing)
+ for leaf in allleaves(bsn.basin)
+     v = hcat(collect(vertices(leaf.boundary))...)
+     #plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]])
+     #@show leaf.data
+     plot!(plt, v[1,[1,2,4,3,1]], v[2,[1,2,4,3,1]], linecolor=:black, lw=0.4)
+
+ end
+ plt
