@@ -117,12 +117,12 @@ xg=range(-4,4,length=150)
 yg=range(-4,4,length=150)
 @time bsn = basins_general(xg, yg, integ; dt=1., idxs=1:2)
 """
-function basins_general(xg, yg, integ; dt=1., idxs=1:2, Ncheck = 10)
+function basins_general(v, integ; dt=1., idxs=1:2, Ncheck = 10)
     i = typeof(idxs) <: Int ? i : SVector{length(idxs), Int}(idxs...)
     iter_f! = (integ) -> step!(integ, dt, true)
     reinit_f! =  (integ,y) -> _init_ds(integ, y, i)
     get_u = (integ) -> integ.u[i]
-    return draw_basin!(xg, yg, integ, iter_f!, reinit_f!,get_u, Ncheck)
+    return draw_basin!(v, integ, iter_f!, reinit_f!,get_u, Ncheck)
 end
 
 
@@ -258,10 +258,10 @@ for higher level functions see: `basin_poincare_map`, `basin_discrete_map`, `bas
 examples for a Poincaré map of a continuous system.
 * `reinit_f!` : function that sets the initial condition to test on a two dimensional projection of the phase space.
 """
-function draw_basin!(xg, yg, integ, iter_f!::Function, reinit_f!::Function, get_u::Function, Ncheck)
+function draw_basin!(v, integ, iter_f!::Function, reinit_f!::Function, get_u::Function, Ncheck)
 
     complete = 0;
-
+    
     bsn_nfo = BasinInfo(ones(Int16, length(xg), length(yg)), xg, yg, iter_f!, reinit_f!, get_u, 2,4,0,0,0,1,1,0,0,
                     Dict{Int16,Dataset{2,Float64}}(),0,Vector{CartesianIndex}(),Vector{CartesianIndex}())
 
