@@ -475,8 +475,10 @@ end
 
 
 function refine_data(cell::Cell, indices, bsn_nfo::BasinInfo)
+    #First take care of the attractors
     if iseven(cell.data)
         att = cell.data
+        # check if the attractor is in one of the child leaf
         for p in bsn_nfo.attractors[att]
             if is_in_cell(cell,p, indices)
                 #@show att,p,cell.boundary,indices
@@ -484,8 +486,11 @@ function refine_data(cell::Cell, indices, bsn_nfo::BasinInfo)
             end
         end
     end
+    # else the data is 1 by default, it is an empty cell.
     return 1
 end
+
+
 
 function get_neighbor_cells(root::Cell,cell::Cell)
     or = cell.boundary.origin
@@ -498,6 +503,7 @@ function get_neighbor_cells(root::Cell,cell::Cell)
     #@show [W E N S cell.data]
     return length(unique([W E N S cell.data])) > 1
 end
+
 
 function check_if_complete!(root::Cell, r_max, bsn_nfo::BasinInfo)
     complete = true
