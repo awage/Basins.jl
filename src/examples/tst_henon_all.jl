@@ -9,8 +9,8 @@ using Printf
 ds = Systems.henon(zeros(2); a = 1.4, b = 0.3)
 integ_df  = integrator(ds)
 
-xres=200
-yres=200
+xres=300
+yres=300
 
 # range for forced pend
 xg = range(-2.,2.,length=xres)

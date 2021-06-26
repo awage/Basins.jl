@@ -16,8 +16,8 @@ F=0.2771812080536913; ω=0.1;  # smooth boundary
 #ω=0.1617;F = 0.395
 #ω=0.3;F = 0.1
 ds = ContinuousDynamicalSystem(duffing, rand(2), [0.15, F, ω])
-integ_df  = integrator(ds; reltol=1e-8, save_everystep=false)
-xg = yg = range(-2.2,2.2,length=100)
+integ_df  = integrator(ds, alg=Vern9(); reltol=1e-8, save_everystep=false)
+xg = yg = range(-2.2,2.2,length=150)
 @time bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
 
 # Basin entropy
