@@ -76,12 +76,12 @@ epsilon = xg[2]-xg[1]
 ```
 
 """
-function detect_wada_merge_method(xg,yg,bsn::BasinInfo)
-    ind  = findall(iseven.(bsn.basin) .== true)
-    basin_test = deepcopy(bsn.basin)
-    for k in ind; basin_test[k] =basin_test[k]+1; end
-    return detect_wada_merge_method(xg,yg,basin_test)
-end
+# function detect_wada_merge_method(xg,yg,bsn)
+#     ind  = findall(iseven.(bsn.basin) .== true)
+#     basin_test = deepcopy(bsn.basin)
+#     for k in ind; basin_test[k] =basin_test[k]+1; end
+#     return detect_wada_merge_method(xg,yg,basin_test)
+# end
 
 function detect_wada_merge_method(xg,yg,basin)
 
@@ -131,7 +131,7 @@ end
 
 
 mutable struct ds_info{I}
-    bsn_nfo::BasinInfo # basin info for BA routine
+    bsn_nfo # basin info for BA routine
     integ::I               # integrator
 end
 
@@ -155,7 +155,7 @@ The algorithm test for Wada basin in a dynamical system. It uses the dynamical s
 * `max_iter` : set the maximum depth of subdivisions to look for an atractor. The number of points doubles at each step.
 
 """
-function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
+function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 
    ds_nfo = ds_info(bsn_nfo, integ)
    num_att = bsn_nfo.Na
