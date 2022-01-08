@@ -34,18 +34,15 @@ F = 1.66
 d=0.2
 p=[d, F, ω]
 #p=[0.15, 0.2, 0.1]
-df = ODEProblem(forced_pendulum,rand(2),(0.0,20.0), p)
-integ_df  = init(df, alg=AutoTsit5(Rosenbrock23()); reltol=1e-9, save_everystep=false, callback=cb)
-
-xres=200
-yres=200
-
+#ds = ContinuousDynamicalSystem(forced_pendulum, rand(2), p)
+ds = Systems.forced_pendulum([0.,0.]; ω = ω, f = F, d = d);
 # range for forced pend
-xg = range(-pi,pi,length=xres)
-yg = range(-2.,4.,length=yres)
-
-# compute basin
-@time bsn = Basins.basins_map2D(xg, yg, integ_df; T=2*pi/ω)
+res = 300
+xg = range(-pi, pi,length = res)
+yg = range(-2., 4.,length = res)
+grid = (xg,yg)
+default_diffeq = (reltol = 1e-9,  alg = Vern9(), callback = cb)
+bsn, att = basins_of_attraction(grid, ds; T = 2*pi/ω, diffeq = default_diffeq)
 
 # Basin entropy
 @show Sb,Sbb = basin_entropy(bsn; eps_x=20, eps_y=20)
