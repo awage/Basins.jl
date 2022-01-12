@@ -28,7 +28,8 @@ xg = yg = range(-2.2,2.2,length=100)
 # @show dmin = min_dist/epsilon
 #
 # # Wada grid
-# W = detect_wada_grid_method(integ_df, bsn; max_iter=8)
+
+W = detect_wada_grid_method(integ_df, bsn; max_iter=8)
 # @show W[:,end]
 #
 # # Uncertainty exponent for these parameter and grid

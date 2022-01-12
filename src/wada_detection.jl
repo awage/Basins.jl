@@ -144,7 +144,7 @@ end
 """
     detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
 The algorithm test for Wada basin in a dynamical system. It uses the dynamical system to look if all the atractors are represented in the boundary.
-
+Warning: only works for 2D (for now)
 [A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada, Sci. Rep., 5, 16579 (2015)]
 
 ## Arguments
@@ -155,28 +155,31 @@ The algorithm test for Wada basin in a dynamical system. It uses the dynamical s
 * `max_iter` : set the maximum depth of subdivisions to look for an atractor. The number of points doubles at each step.
 
 """
-function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
+function detect_wada_grid_method(grid::Tuple, ds; max_iter=10, attractors = nothing, basins = nothing, kwargs...)
 
-   ds_nfo = ds_info(bsn_nfo, integ)
-   num_att = bsn_nfo.Na
 
-   if findfirst(x->x==-1, bsn_nfo.basin) != nothing
+    if isnothing(attractors) || isnothing(basins)
+        basins, attractors = basins_of_attraction(grid, ds; kwargs...)
+    end
+    att = attractors;
+    bsn_nfo, integ = ic_labelling(ds;  attractors = att, kwargs...)
+
+    ds_nfo = ds_info(bsn_nfo, integ)
+    num_att = length(att)
+
+   if findfirst(x->x==-1, basins) != nothing
        @error "The basin contains escapes or undefined attractors, cannot test for Wada"
        return nothing
    end
 
-
+   xg = grid[1]
+   yg = grid[2]
 
    # helper function to obtain coordinates
-   index_to_coord(p) = [bsn_nfo.xg[p[1]], bsn_nfo.yg[p[2]]]
-
-   # We remove the atractors for this computation
-   tmp_bsn = deepcopy(bsn_nfo.basin)
-   ind  = findall(iseven.(tmp_bsn) .== true)
-   [tmp_bsn[k] = tmp_bsn[k]+1 for k in ind ]
+   index_to_coord(p) = [xg[p[1]], yg[p[2]]]
 
    # obtain points in the boundary
-   bnd = get_boundary_filt(tmp_bsn)
+   bnd = get_boundary_filt(basins)
    p1_ind = findall(bnd .> 0)
 
    # initialize empty array of indices and collection of empty sets of colors
@@ -186,7 +189,7 @@ function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 
    # Initialize matrices (step 1)
    for (k,p1) in enumerate(p1_ind)
-       p2, nbgs = get_neighbor_and_colors(tmp_bsn, [p1[1], p1[2]])
+       p2, nbgs = get_neighbor_and_colors(basins, [p1[1], p1[2]])
        if length(nbgs) > 1
            # keep track of different colors and neighbor point
            push!(clr_mat[k],nbgs...)
@@ -220,7 +223,7 @@ function detect_wada_grid_method(integ, bsn_nfo; max_iter=10)
 end
 
 
-function get_neighbor_and_colors(basin, p)
+function get_neighbor_and_colors(basins, p)
     radius = 1
     n=p[1]
     m=p[2]
@@ -229,9 +232,9 @@ function get_neighbor_and_colors(basin, p)
     # check neihbors and collect basin colors
     for k=n-radius:n+radius, l=m-radius:m+radius
         try
-            push!(v,basin[k,l])
+            push!(v,basins[k,l])
             if k != n || l != m
-                if basin[n,m] != basin[k,l]
+                if basins[n,m] != basins[k,l]
                     p2=CartesianIndex(k,l)
                 end
             end
@@ -261,7 +264,7 @@ function divide_and_test_W(ds_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = get_color_point!(ds_nfo.bsn_nfo, ds_nfo.integ, pnt)
+        clr = get_label_ic!(ds_nfo.bsn_nfo, ds_nfo.integ, pnt)
         push!(clrs, clr)
         if length(clrs)  == Na
             break

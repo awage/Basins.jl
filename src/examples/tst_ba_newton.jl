@@ -19,8 +19,8 @@ function newton_map_J(J,z0, p, n)
 end
 ds = DiscreteDynamicalSystem(newton_map,[0.1, 0.2], [3] , newton_map_J)
 
-xg=range(-1.,1.,length=300)
-yg=range(-1.,1.,length=300)
+xg=range(-1.,1.,length=1000)
+yg=range(-1.,1.,length=1000)
 
 @time bsn, att = basins_of_attraction((xg, yg), ds)
 

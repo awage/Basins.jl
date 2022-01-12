@@ -132,7 +132,7 @@ function compute_saddle(grid::Tuple, ds; bas_A = nothing, bas_B = nothing, attra
     if isnothing(attractors)
         basins, att = basins_of_attraction(grid, ds; kwargs...)
     end
-    bsn_nfo, integ = ic_labelling(grid, ds;  attractors = att, kwargs...)
+    bsn_nfo, integ = ic_labelling(ds; attractors = att, kwargs...)
 
     # shortcut functions
     function get_col(u0)
