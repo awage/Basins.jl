@@ -17,7 +17,7 @@ function get_boundary_filt(basin)
     return res
 end
 
-function get_list(basin,xg ,yg)
+function get_list(basin)
 
     num_att = length(unique(basin))
 
@@ -29,7 +29,7 @@ function get_list(basin,xg ,yg)
     # original boundary
     bnd = get_boundary_filt(basin)
     I1=findall(bnd .== 1);
-    for ind in I1; push!(v_list , [xg[ind[1]]; yg[ind[2]]]); end
+    for ind in I1; push!(v_list , [ind[1]; ind[2]]); end
     #@show v_list
     push!(v_set,v_list)
 
@@ -45,7 +45,7 @@ function get_list(basin,xg ,yg)
         I1=findall(bnd .== 1);
         # Get coordinates lists from matrix
         #push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
-        for ind in I1; push!(v_list , [xg[ind[1]]; yg[ind[2]]]); end
+        for ind in I1; push!(v_list , [ind[1]; ind[2]]); end
         push!(v_set,v_list)
     end
 
@@ -56,39 +56,30 @@ end
 
 
 """
-    detect_wada_merge_method(xg,yg, basin)
-The algorithm gives the maximum and minimum Haussdorff distances between merged basins. These two distances can help to decide if the basin has the Wada property.
+    detect_wada_merge_method(basins) -> mx_dist, mn_dist
+The algorithm gives the maximum and minimum Haussdorff distances between combinations
+of merged basins in unit of pixels. These two distances can help to decide if
+the basin has the Wada property.
+
+The maximum Haussdorff distance can be interpreted as the minimum Fattening parameter
+of the boundaries you need to match all basins. See Ref. 
 
 [A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the merging method, Sci. Rep., 8, 9954 (2018)]
 
 ## Arguments
-* `basin` : the matrix containing the information of the basin.
-* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `basins` : the matrix containing the information of the basin.
 
 ## Example
 ```
-max_dist,min_dist = detect_wada_merge_method(basin,xg,yg)
-# grid resolution
-epsilon = xg[2]-xg[1]
-# if dmax is large then this is not Wada
-@show dmax = max_dist/epsilon
-@show dmin = min_dist/epsilon
+max_dist,min_dist = detect_wada_merge_method(basins)
 ```
 
 """
-# function detect_wada_merge_method(xg,yg,bsn)
-#     ind  = findall(iseven.(bsn.basin) .== true)
-#     basin_test = deepcopy(bsn.basin)
-#     for k in ind; basin_test[k] =basin_test[k]+1; end
-#     return detect_wada_merge_method(xg,yg,basin_test)
-# end
+function detect_wada_merge_method(basins)
 
-function detect_wada_merge_method(xg,yg,basin)
+    num_att = length(unique(basins))
 
-    num_att = length(unique(basin))
-
-    v_list=get_list(basin, xg, yg)
-
+    v_list=get_list(basins)
     # compute distances using combbinations of 2 elements from a collection
     ind = combinations(1:num_att,2)
 

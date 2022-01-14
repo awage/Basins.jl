@@ -41,10 +41,7 @@ bsn, att = basins_of_attraction(grid, ds; T = 2*pi/ω, diffeq = default_diffeq)
 test_res, Sbb = basins_fractal_test(bsn; ε = 5, Ntotal = 10000)
 
 # Wada merge Haussdorff distances
-@time max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn)
-epsilon = xg[2]-xg[1]
-@show dmax = max_dist/epsilon
-@show dmin = min_dist/epsilon
+@show max_dist,min_dist = detect_wada_merge_method(bsn)
 
 # Wada grid
 W = detect_wada_grid_method(grid, ds; attractors = att, basins = bsn, max_iter=8, T = 2*pi/ω, diffeq = default_diffeq)
