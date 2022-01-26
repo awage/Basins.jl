@@ -2,18 +2,20 @@
 
 
 
-function bisection_refine!(u_A, u_B, bsn_nfo, integ, basin_A, basin_B, tol)
+function bisection_refine!(u_A, u_B, mapper, basin_A, basin_B, tol)
+
+    bsn_nfo = deepcopy(mapper.bsn_nfo)
+    integ = deepcopy(mapper.integ)
 
     # shortcut functions
     function get_col(u0)
-        a = get_label_ic!(bsn_nfo, integ, u0)
-        return iseven(a) ? Int(a/2) : Int((a-1)/2)
+        a = mapper(u0)
     end
 
     function get_col_next(u0)
         bsn_nfo.complete_and_reinit!(integ,u0)
         bsn_nfo.iter_f!(integ)
-        a=get_col(bsn_nfo.get_projected_state(integ))
+        a = get_col(bsn_nfo.get_projected_state(integ))
         return  a
     end
 
@@ -132,12 +134,11 @@ function compute_saddle(grid::Tuple, ds; bas_A = nothing, bas_B = nothing, attra
     if isnothing(attractors)
         basins, att = basins_of_attraction(grid, ds; kwargs...)
     end
-    bsn_nfo, integ = ic_labelling(ds; attractors = att, kwargs...)
+    mapper = AttractorMapper(ds; attractors = att, kwargs...)
 
     # shortcut functions
     function get_col(u0)
-        a = get_label_ic!(bsn_nfo, integ, u0)
-        return iseven(a) ? Int(a/2) : Int((a-1)/2)
+        a = mapper(u0)
     end
 
     Na = length(att)
@@ -163,6 +164,8 @@ function compute_saddle(grid::Tuple, ds; bas_A = nothing, bas_B = nothing, attra
     v = att[bas_B[1]]
     u_B = v[1]
 
+    bsn_nfo = deepcopy(mapper.bsn_nfo)
+    integ = deepcopy(mapper.integ)
 
     saddle_series_A = Array{typeof(u_A),1}(undef, N)
     saddle_series_B = Array{typeof(u_A),1}(undef, N)
@@ -173,7 +176,7 @@ function compute_saddle(grid::Tuple, ds; bas_A = nothing, bas_B = nothing, attra
     while k<= N
 
         # Initial bisection
-        u_A_r,u_B_r = bisection_refine!(u_A, u_B, bsn_nfo, integ, bas_A, bas_B, tol)
+        u_A_r,u_B_r = bisection_refine!(u_A, u_B, mapper, bas_A, bas_B, tol)
 
         dist = norm(u_A_r-u_B_r)
         bsn_nfo.complete_and_reinit!(integ, u_A_r)

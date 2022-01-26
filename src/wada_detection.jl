@@ -62,7 +62,7 @@ of merged basins in unit of pixels. These two distances can help to decide if
 the basin has the Wada property.
 
 The maximum Haussdorff distance can be interpreted as the minimum Fattening parameter
-of the boundaries you need to match all basins. See Ref. 
+of the boundaries you need to match all basins. See Ref.
 
 [A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the merging method, Sci. Rep., 8, 9954 (2018)]
 
@@ -153,9 +153,9 @@ function detect_wada_grid_method(grid::Tuple, ds; max_iter=10, attractors = noth
         basins, attractors = basins_of_attraction(grid, ds; kwargs...)
     end
     att = attractors;
-    bsn_nfo, integ = ic_labelling(ds;  attractors = att, kwargs...)
+    mapper = AttractorMapper(ds;  attractors = att, kwargs...)
 
-    ds_nfo = ds_info(bsn_nfo, integ)
+    #ds_nfo = ds_info(bsn_nfo, integ)
     num_att = length(att)
 
    if findfirst(x->x==-1, basins) != nothing
@@ -197,7 +197,7 @@ function detect_wada_grid_method(grid::Tuple, ds; max_iter=10, attractors = noth
            pc1 = index_to_coord(p1_ind[k])
            pc2 = index_to_coord(p2_ind[k])
            # update number of colors
-           clr_mat[k]=divide_and_test_W(ds_nfo, pc1, pc2, n, clr_mat[k], num_att)
+           clr_mat[k]=divide_and_test_W(mapper, pc1, pc2, n, clr_mat[k], num_att)
            # update W matrix
            W[length(clr_mat[k]),n] += 1
        end
@@ -238,7 +238,7 @@ end
 
 
 
-function divide_and_test_W(ds_nfo, p1, p2, nstep, clrs, Na)
+function divide_and_test_W(mapper, p1, p2, nstep, clrs, Na)
 
     if length(clrs)  == Na
         return clrs
@@ -255,7 +255,7 @@ function divide_and_test_W(ds_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = get_label_ic!(ds_nfo.bsn_nfo, ds_nfo.integ, pnt)
+        clr = mapper(pnt)
         push!(clrs, clr)
         if length(clrs)  == Na
             break
