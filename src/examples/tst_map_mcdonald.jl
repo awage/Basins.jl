@@ -9,7 +9,6 @@ using BenchmarkTools
 # Steven W. MCDONALD, Celso GREBOGY Edward OTT and James A. YORKE
 # Physica D 17 1985
 function chaotic_map(dz,z, p, n)
-
     xn = z[1]; yn = z[2]
     λ₁=p[1];λ₂=p[2];
     dz[1]=mod(λ₁*xn,1)

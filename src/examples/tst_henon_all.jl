@@ -7,20 +7,16 @@ using Printf
 
 
 ds = Systems.henon(zeros(2); a = 1.4, b = 0.3)
-integ_df  = integrator(ds)
-
-xres=200
-yres=200
-
+res=200
 # range for forced pend
-xg = range(-2.,2.,length=xres)
-yg = range(-2.,2.,length=yres)
+xg = range(-2.,2.,length=res)
+yg = range(-2.,2.,length=res)
 
 # compute basin
-@time basin = Basins.basins_map2D(xg, yg, integ_df)
+@time basins, att = basins_of_attraction((xg, yg), ds)
 
 # Basin entropy
-@show Sb,Sbb = basin_entropy(bsn.basin; eps_x=20, eps_y=20)
+@show Sb,Sbb = basin_entropy(basins; eps_x=20, eps_y=20)
 
 # Wada merge Haussdorff distances
 @time max_dist,min_dist = detect_wada_merge_method(xg, yg, bsn.basin)

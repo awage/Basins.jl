@@ -24,12 +24,12 @@ integ  = integrator(ds)
 xg=range(0.,0.999999,length=100)
 yg=range(0.,0.999999,length=100)
 
-@time bsn=Basins.basins_general(xg, yg, integ; dt=1)
-plot(xg,yg,bsn.basin',seriestype=:heatmap)
+@time bsn, att = basins_of_attraction((xg, yg), ds)
+plot(xg,yg,bsn',seriestype=:heatmap)
 
-# Estimation using box counting
-ind  = findall(iseven.(bsn.basin) .== true)
-basin_test = deepcopy(bsn.basin)
-[basin_test[k] =basin_test[k]+1 for k in ind ]
-bd = box_counting_dim(xg,yg, basin_test)
-α = 2 - bd
+# # Estimation using box counting
+# ind  = findall(iseven.(bsn.basin) .== true)
+# basin_test = deepcopy(bsn.basin)
+# [basin_test[k] =basin_test[k]+1 for k in ind ]
+# bd = box_counting_dim(xg,yg, basin_test)
+# α = 2 - bd

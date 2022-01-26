@@ -20,13 +20,12 @@ function grebogi_map_J(J,z0, p, n)
    return
 end
 ds = DiscreteDynamicalSystem(grebogi_map,[1., -1.], [] , grebogi_map_J)
-integ  = integrator(ds)
 
-θg=range(0,2π,length=600)
-xg=range(-0.5,0.5,length=600)
 
-@time bsn=Basins.basins_map2D(θg, xg, integ)
-#@time bns2=ChaosTools.basin_map(θg, xg, integ)
+θg = range(0, 2π, length = 600)
+xg = range(-0.5, 0.5, length = 600)
+
+@time bsn, att = basins_of_attration((θg, xg), ds)
 
 #plot(θg,xg,bsn.basin',seriestype=:heatmap)
 

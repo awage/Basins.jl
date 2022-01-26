@@ -2,18 +2,20 @@
 
 
 
-function bisection_refine!(u_A, u_B, bsn_nfo, integ, basin_A, basin_B, tol)
+function bisection_refine!(u_A, u_B, mapper, basin_A, basin_B, tol)
+
+    bsn_nfo = deepcopy(mapper.bsn_nfo)
+    integ = deepcopy(mapper.integ)
 
     # shortcut functions
     function get_col(u0)
-        a = get_color_point!(bsn_nfo, integ, u0)
-        return iseven(a) ? Int(a/2) : Int((a-1)/2)
+        a = mapper(u0)
     end
 
     function get_col_next(u0)
-        bsn_nfo.reinit_f!(integ,u0)
+        bsn_nfo.complete_and_reinit!(integ,u0)
         bsn_nfo.iter_f!(integ)
-        a=get_col(bsn_nfo.get_u(integ))
+        a = get_col(bsn_nfo.get_projected_state(integ))
         return  a
     end
 
@@ -101,12 +103,12 @@ end
 
 
 """
-    compute_saddle(bsn_nfo::BasinInfo, integ; max_iter=10)
+    compute_saddle(grid::Tuple, ds; bas_A = nothing, bas_B = nothing, N = 100, init_tol = 1e-6, kwargs...)
 The algorithm the saddle that lies in  a boundary of the basin of attraction of a dynamical system. When the boundary is fractal, this
 set is known as the chaotic saddle and is responsible for the transient dynamics of the system. The saddle is computed with the Saddle-Straddle
 algorithm. It is necessary to define two `generalized basin`, that is we must separate the basin into two sets (see also keyword arguments).
 
-[H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 2012]
+[H. E. Nusse and J. A. Yorke, Dynamics: numerical explorations, Springer, New York, 1997]
 
 ## Arguments
 * `bsn_nfo` : structure that holds the information of the basin as well as the map function. This structure is set when the basin is first computed with `basin_stroboscopic_map` or `basin_poincare_map`.
@@ -126,15 +128,21 @@ sa,sb = compute_saddle(bsn, integ_df, [1], [2,3],1000)
 ```
 
 """
-function compute_saddle(integ, bsn_nfo::BasinInfo, bas_A, bas_B; N=100, init_tol = 1e-6)
+function compute_saddle(grid::Tuple, ds; bas_A = nothing, bas_B = nothing, attractors = nothing, N = 100, init_tol = 1e-6, kwargs...)
+
+    att = attractors;
+    if isnothing(attractors)
+        basins, att = basins_of_attraction(grid, ds; kwargs...)
+    end
+    mapper = AttractorMapper(ds; attractors = att, kwargs...)
 
     # shortcut functions
     function get_col(u0)
-        a = get_color_point!(bsn_nfo, integ, u0)
-        return iseven(a) ? Int(a/2) : Int((a-1)/2)
+        a = mapper(u0)
     end
 
-    Na = bsn_nfo.Na
+    Na = length(att)
+
     # basic check
     if (Set(bas_A) ∪ Set(bas_B)) != Set(collect(1:Na))
         @error "Generalized basins are not well defined"
@@ -148,15 +156,16 @@ function compute_saddle(integ, bsn_nfo::BasinInfo, bas_A, bas_B; N=100, init_tol
 
 
     tol = init_tol
-    xg = bsn_nfo.xg; yg = bsn_nfo.yg; # aliases
-
+    @show att
     # Set initial condition near attractors of the selected basins.
-    u_A = u_B = [0., 0.]
-    v = bsn_nfo.attractors[bas_A[1]*2]
+    u_A = u_B = zeros(length(att[1]))
+    v = att[bas_A[1]]
     u_A = v[1]
-    v = bsn_nfo.attractors[bas_B[1]*2]
+    v = att[bas_B[1]]
     u_B = v[1]
 
+    bsn_nfo = deepcopy(mapper.bsn_nfo)
+    integ = deepcopy(mapper.integ)
 
     saddle_series_A = Array{typeof(u_A),1}(undef, N)
     saddle_series_B = Array{typeof(u_A),1}(undef, N)
@@ -167,17 +176,17 @@ function compute_saddle(integ, bsn_nfo::BasinInfo, bas_A, bas_B; N=100, init_tol
     while k<= N
 
         # Initial bisection
-        u_A_r,u_B_r = bisection_refine!(u_A, u_B, bsn_nfo, integ, bas_A, bas_B, tol)
+        u_A_r,u_B_r = bisection_refine!(u_A, u_B, mapper, bas_A, bas_B, tol)
 
         dist = norm(u_A_r-u_B_r)
-        bsn_nfo.reinit_f!(integ,u_A_r)
+        bsn_nfo.complete_and_reinit!(integ, u_A_r)
         bsn_nfo.iter_f!(integ)
-        u_A_it = deepcopy(bsn_nfo.get_u(integ)) # for some reason I have to deepcopy this vector
+        u_A_it = bsn_nfo.get_projected_state(integ) # for some reason I have to deepcopy this vector
         ca=get_col(u_A_it)
 
-        bsn_nfo.reinit_f!(integ,u_B_r)
+        bsn_nfo.complete_and_reinit!(integ,u_B_r)
         bsn_nfo.iter_f!(integ)
-        u_B_it = deepcopy(bsn_nfo.get_u(integ))
+        u_B_it = bsn_nfo.get_projected_state(integ)
         cb=get_col(u_B_it)
 
 
