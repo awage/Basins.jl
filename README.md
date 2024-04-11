@@ -1,3 +1,6 @@
+THIS REPOSITORY IS DEPRECATED. All the functionalities have been implemented in DynamicalSystems.jl. See https://github.com/JuliaDynamics/Attractors.jl
+=======================================================================================================================================================
+
 Basins.jl
 =========
 
