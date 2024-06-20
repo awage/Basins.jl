@@ -17,7 +17,7 @@ function get_boundary_filt(basin)
     return res
 end
 
-function get_list(basin,xg ,yg)
+function get_list(basin)
 
     num_att = length(unique(basin))
 
@@ -29,7 +29,7 @@ function get_list(basin,xg ,yg)
     # original boundary
     bnd = get_boundary_filt(basin)
     I1=findall(bnd .== 1);
-    for ind in I1; push!(v_list , [xg[ind[1]]; yg[ind[2]]]); end
+    for ind in I1; push!(v_list , [ind[1]; ind[2]]); end
     #@show v_list
     push!(v_set,v_list)
 
@@ -45,7 +45,7 @@ function get_list(basin,xg ,yg)
         I1=findall(bnd .== 1);
         # Get coordinates lists from matrix
         #push!(v_list , hcat([[xg[ind[1]]; yg[ind[2]]] for ind in I1 ]...))
-        for ind in I1; push!(v_list , [xg[ind[1]]; yg[ind[2]]]); end
+        for ind in I1; push!(v_list , [ind[1]; ind[2]]); end
         push!(v_set,v_list)
     end
 
@@ -56,39 +56,30 @@ end
 
 
 """
-    detect_wada_merge_method(xg,yg, basin)
-The algorithm gives the maximum and minimum Haussdorff distances between merged basins. These two distances can help to decide if the basin has the Wada property.
+    detect_wada_merge_method(basins) -> mx_dist, mn_dist
+The algorithm gives the maximum and minimum Haussdorff distances between combinations
+of merged basins in unit of pixels. These two distances can help to decide if
+the basin has the Wada property.
+
+The maximum Haussdorff distance can be interpreted as the minimum Fattening parameter
+of the boundaries you need to match all basins. See Ref.
 
 [A. Daza, A. Wagemakers and M. A. F. Sanjuán, Ascertaining when a basin is Wada: the merging method, Sci. Rep., 8, 9954 (2018)]
 
 ## Arguments
-* `basin` : the matrix containing the information of the basin.
-* `xg`, `yg` : 1-dim range vector that defines the grid of the initial conditions to test.
+* `basins` : the matrix containing the information of the basin.
 
 ## Example
 ```
-max_dist,min_dist = detect_wada_merge_method(basin,xg,yg)
-# grid resolution
-epsilon = xg[2]-xg[1]
-# if dmax is large then this is not Wada
-@show dmax = max_dist/epsilon
-@show dmin = min_dist/epsilon
+max_dist,min_dist = detect_wada_merge_method(basins)
 ```
 
 """
-function detect_wada_merge_method(xg,yg,bsn::BasinInfo)
-    ind  = findall(iseven.(bsn.basin) .== true)
-    basin_test = deepcopy(bsn.basin)
-    for k in ind; basin_test[k] =basin_test[k]+1; end
-    return detect_wada_merge_method(xg,yg,basin_test)
-end
+function detect_wada_merge_method(basins)
 
-function detect_wada_merge_method(xg,yg,basin)
+    num_att = length(unique(basins))
 
-    num_att = length(unique(basin))
-
-    v_list=get_list(basin, xg, yg)
-
+    v_list=get_list(basins)
     # compute distances using combbinations of 2 elements from a collection
     ind = combinations(1:num_att,2)
 
@@ -131,7 +122,7 @@ end
 
 
 mutable struct ds_info{I}
-    bsn_nfo::BasinInfo # basin info for BA routine
+    bsn_nfo # basin info for BA routine
     integ::I               # integrator
 end
 
@@ -144,7 +135,7 @@ end
 """
     detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
 The algorithm test for Wada basin in a dynamical system. It uses the dynamical system to look if all the atractors are represented in the boundary.
-
+Warning: only works for 2D (for now)
 [A. Daza, A. Wagemakers, M. A. F. Sanjuán and J. A. Yorke, Testing for Basins of Wada, Sci. Rep., 5, 16579 (2015)]
 
 ## Arguments
@@ -155,28 +146,31 @@ The algorithm test for Wada basin in a dynamical system. It uses the dynamical s
 * `max_iter` : set the maximum depth of subdivisions to look for an atractor. The number of points doubles at each step.
 
 """
-function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
+function detect_wada_grid_method(grid::Tuple, ds; max_iter=10, attractors = nothing, basins = nothing, kwargs...)
 
-   ds_nfo = ds_info(bsn_nfo, integ)
-   num_att = bsn_nfo.Na
 
-   if findfirst(x->x==-1, bsn_nfo.basin) != nothing
+    if isnothing(attractors) || isnothing(basins)
+        basins, attractors = basins_of_attraction(grid, ds; kwargs...)
+    end
+    att = attractors;
+    mapper = AttractorMapper(ds;  attractors = att, kwargs...)
+
+    #ds_nfo = ds_info(bsn_nfo, integ)
+    num_att = length(att)
+
+   if findfirst(x->x==-1, basins) != nothing
        @error "The basin contains escapes or undefined attractors, cannot test for Wada"
        return nothing
    end
 
-
+   xg = grid[1]
+   yg = grid[2]
 
    # helper function to obtain coordinates
-   index_to_coord(p) = [bsn_nfo.xg[p[1]], bsn_nfo.yg[p[2]]]
-
-   # We remove the atractors for this computation
-   tmp_bsn = deepcopy(bsn_nfo.basin)
-   ind  = findall(iseven.(tmp_bsn) .== true)
-   [tmp_bsn[k] = tmp_bsn[k]+1 for k in ind ]
+   index_to_coord(p) = [xg[p[1]], yg[p[2]]]
 
    # obtain points in the boundary
-   bnd = get_boundary_filt(tmp_bsn)
+   bnd = get_boundary_filt(basins)
    p1_ind = findall(bnd .> 0)
 
    # initialize empty array of indices and collection of empty sets of colors
@@ -186,7 +180,7 @@ function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
 
    # Initialize matrices (step 1)
    for (k,p1) in enumerate(p1_ind)
-       p2, nbgs = get_neighbor_and_colors(tmp_bsn, [p1[1], p1[2]])
+       p2, nbgs = get_neighbor_and_colors(basins, [p1[1], p1[2]])
        if length(nbgs) > 1
            # keep track of different colors and neighbor point
            push!(clr_mat[k],nbgs...)
@@ -203,7 +197,7 @@ function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
            pc1 = index_to_coord(p1_ind[k])
            pc2 = index_to_coord(p2_ind[k])
            # update number of colors
-           clr_mat[k]=divide_and_test_W(ds_nfo, pc1, pc2, n, clr_mat[k], num_att)
+           clr_mat[k]=divide_and_test_W(mapper, pc1, pc2, n, clr_mat[k], num_att)
            # update W matrix
            W[length(clr_mat[k]),n] += 1
        end
@@ -220,7 +214,7 @@ function detect_wada_grid_method(integ, bsn_nfo::BasinInfo; max_iter=10)
 end
 
 
-function get_neighbor_and_colors(basin, p)
+function get_neighbor_and_colors(basins, p)
     radius = 1
     n=p[1]
     m=p[2]
@@ -229,9 +223,9 @@ function get_neighbor_and_colors(basin, p)
     # check neihbors and collect basin colors
     for k=n-radius:n+radius, l=m-radius:m+radius
         try
-            push!(v,basin[k,l])
+            push!(v,basins[k,l])
             if k != n || l != m
-                if basin[n,m] != basin[k,l]
+                if basins[n,m] != basins[k,l]
                     p2=CartesianIndex(k,l)
                 end
             end
@@ -244,7 +238,7 @@ end
 
 
 
-function divide_and_test_W(ds_nfo, p1, p2, nstep, clrs, Na)
+function divide_and_test_W(mapper, p1, p2, nstep, clrs, Na)
 
     if length(clrs)  == Na
         return clrs
@@ -261,7 +255,7 @@ function divide_and_test_W(ds_nfo, p1, p2, nstep, clrs, Na)
 
     # get colors and update color set for this box!
     for pnt in pnt_to_test
-        clr = get_color_point!(ds_nfo.bsn_nfo, ds_nfo.integ, pnt)
+        clr = mapper(pnt)
         push!(clrs, clr)
         if length(clrs)  == Na
             break

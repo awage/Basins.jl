@@ -1,27 +1,21 @@
 name = "Basins"
 uuid = "7e5b28ef-eee2-49be-86fd-c343c6921134"
 authors = ["Alexandre Wagemakers"]
-version = "0.8.0"
+version = "0.9.0"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634"
 ImageFiltering = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
 NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-RegionTrees = "dee08c22-ab7f-5625-9660-a9af2021b33f"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 
 [compat]
 Combinatorics = "0.7, 1"
-DataStructures = "0.18"
-DynamicalSystems = "1.6.0"
+DynamicalSystems = "2.0"
 ImageFiltering = "0.6"
-LsqFit = "0.12.0"
 NearestNeighbors = "0.4"
-RegionTrees = "0.3"
 Roots = "0.7, 0.8, 1.0"
 julia = "1.5"
 

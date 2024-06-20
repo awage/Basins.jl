@@ -1,3 +1,7 @@
+
+# 0.9.0
+* Most functions have moved to ChaosTools.jl
+
 # 0.8.0
 * Added fixed resolution uncertainty exponent estimation
 * improved uncertainty exponent estimation
